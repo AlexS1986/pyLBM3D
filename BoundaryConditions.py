@@ -182,7 +182,7 @@ def applyDirichletBoundaryConditions(fArg, fCollArg, rhoArg, csArg, ccArg, cArg,
 
 import Core
 
-def computePBd(sigmaBC, fArg, ccArg, cArg, uArg, dxArg, laArg, mueArg, coordinateArg='x', coordinateValueArg=0):
+def computePBd(sigmaBC, fArg, ccArg, cArg, uArg, dxArg, laArg, mueArg, rhoArg, rho0Arg, coordinateArg='x', coordinateValueArg=0):
     def applyTractionBoundaryConditions(sigmaBd, sigmaBC):
         sigmaBd = copy.deepcopy(sigmaBd)
         for i in range(0, len(sigmaBd)):
@@ -216,7 +216,7 @@ def computePBd(sigmaBC, fArg, ccArg, cArg, uArg, dxArg, laArg, mueArg, coordinat
 
 
     P = Core.secondMoment(fArg, ccArg)
-    divU = Core.computeDivergenceU(uArg, dxArg)
+    divU = Core.computeDivergenceUFromDensity(rhoArg, rho0Arg)#Core.computeDivergenceU(uArg, dxArg)
     sigma = Core.computeSigma(P, divU, laArg, mueArg)
     #sigmaBd = extrapolateTensorToBd(sigma,ccArg,cArg,coordinateArg,coordinateValueArg) #with extrapolation
     sigmaBd = computeSigmaBdWithoutExtrapolation(sigma,ccArg,coordinateArg,coordinateValueArg) # without extrapolation
@@ -232,15 +232,27 @@ def computePBd(sigmaBC, fArg, ccArg, cArg, uArg, dxArg, laArg, mueArg, coordinat
                 Pbd[i,j,l] = -sigmaBd[i,j,l] + (laArg - mueArg) * divUBd[i,j,l] * np.identity(3, dtype=float)
     return Pbd
 
+def computeRhoBdWithoutExtrapolation(rhoArg, ccArg, coordinateArg,coordinateValueArg):
+    rhoAtCoordinate = selectAtCoordinate(rhoArg,coordinateArg,coordinateValueArg)
+    rhoBd = np.zeros((len(rhoArg),len(rhoArg[0]),len(ccArg)), dtype=float)
 
-def applyNeumannBoundaryConditions(fArg, fCollArg, uArg , rhoArg, csArg, ccArg, cArg, wArg, sigmaBdArg, dxArg, laArg, mueArg, coordinateArg='x', coordinateValueArg=0):
-    rhoBd = extrapolateScalarToBd(rhoArg, ccArg, cArg, coordinateArg,
-                                  coordinateValueArg)  # needs to be computed for lattice link
+    for i in range(0, len(rhoBd)):
+        for j in range(0, len(rhoBd[i])):
+            for l in range(0, len(rhoBd[i][j])):
+                rhoBd[i,j,l] = rhoAtCoordinate[i,j]
+    return rhoBd
+
+
+def applyNeumannBoundaryConditions(fArg, fCollArg, uArg , rhoArg, rho0Arg, csArg, ccArg, cArg, wArg, sigmaBdArg, dxArg, laArg, mueArg, coordinateArg='x', coordinateValueArg=0):
+
+    #rhoBd = extrapolateScalarToBd(rhoArg, ccArg, cArg, coordinateArg,
+    #                              coordinateValueArg) # with extrapolation
+    rhoBd = computeRhoBdWithoutExtrapolation(rhoArg,ccArg,coordinateArg,coordinateValueArg)
     fCollRelevant = selectAtCoordinate(fCollArg, coordinateArg, coordinateValueArg)
     fOut = copy.deepcopy(fArg)
     fRelevant = selectAtCoordinate(fOut, coordinateArg, coordinateValueArg)
     indicesMissing = getMissingDistributionFunctionIndices(fArg, coordinateArg, coordinateValueArg)
-    PBd = computePBd(sigmaBdArg,fArg,ccArg,cArg,uArg,dxArg,laArg,mueArg,coordinateArg,coordinateValueArg)
+    PBd = computePBd(sigmaBdArg,fArg,ccArg,cArg,uArg,dxArg,laArg,mueArg,rhoArg, rho0Arg, coordinateArg,coordinateValueArg)
     for i in range(0, len(fRelevant)):
         for j in range(0, len(fRelevant[0])):
             for l in indicesMissing:
@@ -252,3 +264,183 @@ def applyNeumannBoundaryConditions(fArg, fCollArg, uArg , rhoArg, csArg, ccArg, 
 
     return fOut
 
+
+def selectAtEdge(arrayArg, coordinateArg1='x', coordinateValueArg1=0, coordinateArg2='y', coordinateValueArg2=0):
+    if coordinateArg1 == 'x' and coordinateArg2 == 'y':
+        return arrayArg[coordinateValueArg1,coordinateValueArg2, :]
+    elif coordinateArg1 == 'x' and coordinateArg2 == 'z':
+        return arrayArg[coordinateValueArg1, :, coordinateValueArg2]
+    elif coordinateArg1 == 'y' and coordinateArg2 == 'z':
+        return arrayArg[:, coordinateValueArg1, coordinateValueArg2]
+    return ""
+
+
+def selectAtCorner(arrayArg, coordinateValueArg1=0, coordinateValueArg2=0, coordinateValueArg3=0):
+    return arrayArg[coordinateValueArg1,coordinateValueArg2,coordinateValueArg3]
+
+
+def getMissingDistributionFunctionIndicesAtEdge(fArg,coordinateArg1='x', coordinateValueArg1=0, coordinateArg2='y', coordinateValueArg2=0):
+    def checkIfEdge():
+        if coordinateArg1=='x' and coordinateArg2=='y':
+            return (coordinateValueArg1 == 0 or coordinateValueArg1 == len(fArg) - 1) and (coordinateValueArg2 == 0 or coordinateValueArg2 == len(fArg[0]) -1)
+        elif coordinateArg1=='x' and coordinateArg2=='z':
+            return (coordinateValueArg1 == 0 or coordinateValueArg1 == len(fArg) - 1) and (
+                        coordinateValueArg2 == 0 or coordinateValueArg2 == len(fArg[0][0]) - 1)
+        elif coordinateArg1 == 'y' and coordinateArg2 == 'z':
+            return (coordinateValueArg1 == 0 or coordinateValueArg1 == len(fArg[0]) - 1) and (
+                    coordinateValueArg2 == 0 or coordinateValueArg2 == len(fArg[0][0]) - 1)
+        return False
+
+    if not checkIfEdge():
+        raise ValueError("Supplied values are not an edge.")
+
+    maxX = len(fArg) - 1
+    maxY = len(fArg[0]) - 1
+    maxZ = len(fArg[0][0]) - 1
+
+    if coordinateArg1 == 'x' and coordinateArg2 == 'y':
+        if coordinateValueArg1 == 0 and coordinateValueArg2 == 0: # --|
+            indicesStreamingOverEdge =  [8,20,22]
+        elif coordinateValueArg1 == maxX and coordinateValueArg2 == 0: # +-|
+            indicesStreamingOverEdge = [13, 23, 26]
+        elif coordinateValueArg1 == maxX and coordinateValueArg2 == maxY: # ++|
+            indicesStreamingOverEdge =[7,19,21]
+        elif coordinateValueArg1 == 0 and coordinateValueArg2 == maxY: # -+|
+            indicesStreamingOverEdge = [14,24,25]
+    elif coordinateArg1 == 'x' and coordinateArg2 == 'z':
+        if coordinateValueArg1 == 0 and coordinateValueArg2 == 0: # -|-
+            indicesStreamingOverEdge = [10,20,24]
+        elif coordinateValueArg1 == maxX and coordinateValueArg2 == 0: # +|-
+            indicesStreamingOverEdge = [15, 21, 26]
+        elif coordinateValueArg1 == maxX and coordinateValueArg2 == maxZ: # +|+
+            indicesStreamingOverEdge = [9,19,23]
+        elif coordinateValueArg1 == 0 and coordinateValueArg2 == maxZ: # -|+
+            indicesStreamingOverEdge = [16,22,25]
+    elif coordinateArg1 == 'y' and coordinateArg2 == 'z':
+        if coordinateValueArg1 == 0 and coordinateValueArg2 == 0: # |--
+            indicesStreamingOverEdge = [12,20,26]
+        elif coordinateValueArg1 == maxX and coordinateValueArg2 == 0: # |+-
+            indicesStreamingOverEdge = [17, 21, 24]
+        elif coordinateValueArg1 == maxX and coordinateValueArg2 == maxY: # |++
+            indicesStreamingOverEdge = [11,19,25]
+        elif coordinateValueArg1 == 0 and coordinateValueArg2 == maxY: # |-+
+            indicesStreamingOverEdge = [18,22,23]
+    else:
+        raise Exception("Invalid parameters")
+
+    return [getOppositeLatticeDirection(indicesStreamingOverEdge[0]), getOppositeLatticeDirection(indicesStreamingOverEdge[1]), getOppositeLatticeDirection(indicesStreamingOverEdge[2])]
+
+
+def getMissingDistributionFunctionIndicesAtCorner(fArg, coordinateValueArg1=0, coordinateValueArg2=0, coordinateValueArg3=0):
+    maxX = len(fArg) - 1
+    maxY = len(fArg[0]) - 1
+    maxZ = len(fArg[0][0]) - 1
+
+    def checkIfCorner():
+        return (coordinateValueArg1 == 0 or coordinateValueArg1 == maxX) and (coordinateValueArg2 == 0 or coordinateValueArg2 == maxY) and (coordinateValueArg3 == 0 or coordinateValueArg3 == maxZ)
+
+    if not checkIfCorner():
+        raise ValueError("Supplied values are not a corner.")
+
+    if coordinateValueArg1 == 0 and coordinateValueArg2 == 0 and coordinateValueArg3 == 0:
+        indicesStreamingOverCorner = [20]
+    elif coordinateValueArg1 == maxX and coordinateValueArg2 == 0 and coordinateValueArg3 == 0:
+        indicesStreamingOverCorner = [26]
+    elif coordinateValueArg1 == maxX and coordinateValueArg2 == maxY and coordinateValueArg3 == 0:
+        indicesStreamingOverCorner = [21]
+    elif coordinateValueArg1 == 0 and coordinateValueArg2 == maxY and coordinateValueArg3 == 0:
+        indicesStreamingOverCorner = [24]
+    elif coordinateValueArg1 == 0 and coordinateValueArg2 == 0 and coordinateValueArg3 == maxZ:
+        indicesStreamingOverCorner = [22]
+    elif coordinateValueArg1 == maxX and coordinateValueArg2 == 0 and coordinateValueArg3 == maxZ:
+        indicesStreamingOverCorner = [23]
+    elif coordinateValueArg1 == maxX and coordinateValueArg2 == maxY and coordinateValueArg3 == maxZ:
+        indicesStreamingOverCorner = [19]
+    elif coordinateValueArg1 == 0 and coordinateValueArg2 == maxY and coordinateValueArg3 == maxZ:
+        indicesStreamingOverCorner = [25]
+    else:
+        raise ValueError("Supplied values are not a corner.")
+
+    return [getOppositeLatticeDirection(indicesStreamingOverCorner[0])]
+
+
+def reduceSurfaceToEdge(surfaceArrayArg, coordinateArg1='x', coordinateArg2='y', coordinateValueArg2=0):
+    if coordinateArg1=='x' and coordinateArg2=='y':
+        return selectAtCoordinate(surfaceArrayArg,'x', coordinateValueArg2)
+    elif coordinateArg1=='x' and coordinateArg2=='z':
+        return selectAtCoordinate(surfaceArrayArg,'y', coordinateValueArg2)
+    elif coordinateArg1=='y' and coordinateArg2=='z':
+        return selectAtCoordinate(surfaceArrayArg, 'x', coordinateValueArg2)
+    else:
+        raise Exception("Invalid input.")
+
+
+
+def applyNeumannBoundaryConditionsAtEdge(fArg, fCollArg, uArg , rhoArg, rho0Arg, csArg, ccArg, cArg, wArg, sigmaBdArg1, sigmaBdArg2, dxArg, laArg, mueArg, coordinateArg1='x', coordinateValueArg1=0, coordinateArg2='y', coordinateValueArg2=0):
+    rhoBd = reduceSurfaceToEdge(computeRhoBdWithoutExtrapolation(rhoArg, ccArg, coordinateArg1, coordinateValueArg1),coordinateArg1,coordinateArg2,coordinateValueArg2)
+    #rhoBd = selectAtEdge(rhoArg, coordinateArg1, coordinateValueArg1, coordinateArg2, coordinateValueArg2)
+    fCollRelevant = selectAtEdge(fCollArg,coordinateArg1, coordinateValueArg1, coordinateArg2, coordinateValueArg2)
+    fOut = copy.deepcopy(fArg)
+    fRelevant = selectAtEdge(fOut,coordinateArg1, coordinateValueArg1, coordinateArg2, coordinateValueArg2)
+    indicesMissing = getMissingDistributionFunctionIndicesAtEdge(fArg, coordinateArg1,coordinateValueArg1, coordinateArg2, coordinateValueArg2)
+
+    sigmaBd = 1.0/2.0 * (sigmaBdArg1 + sigmaBdArg2)
+    PBd = reduceSurfaceToEdge(computePBd(sigmaBd, fArg, ccArg, cArg, uArg, dxArg, laArg, mueArg, rhoArg, rho0Arg, coordinateArg1,
+                     coordinateValueArg1), coordinateArg1,coordinateArg2,coordinateValueArg2)
+
+    for i in range(0, len(fRelevant)):
+        for l in indicesMissing:
+            oL = getOppositeLatticeDirection(l)
+
+            tmp1 = PBd[i,l] - rhoBd[i,l] * csArg ** 2 * np.identity(3,dtype=float)
+            tmp2 = np.outer(ccArg[oL], ccArg[oL].transpose()) - csArg ** 2 * np.identity(3, dtype=float)
+            print(fRelevant.shape)
+            fRelevant[i,l] = - fCollRelevant[i,  oL] + 2.0 * wArg[oL] * (rhoBd[i,l] + 1.0 / (2.0 * csArg ** 4) * (np.tensordot(tmp1,tmp2, axes=2)))
+
+    return fOut
+
+
+def reduceSurfaceToCorner(surfaceArrayArg,coordinateValueArg2=0, coordinateValueArg3=0):
+    return surfaceArrayArg[coordinateValueArg2,coordinateValueArg3]
+
+
+def applyNeumannBoundaryConditionsAtCorner(fArg, fCollArg, uArg , rhoArg, rho0Arg, csArg, ccArg, cArg, wArg, sigmaBdArg1, sigmaBdArg2, sigmaBdArg3, dxArg, laArg, mueArg, coordinateValueArg1=0, coordinateValueArg2=0, coordinateValueArg3=0):
+    rhoBd = reduceSurfaceToCorner(computeRhoBdWithoutExtrapolation(rhoArg, ccArg, 'x', coordinateValueArg1),coordinateValueArg2, coordinateValueArg3)
+    #rhoBd = selectAtEdge(rhoArg, coordinateArg1, coordinateValueArg1, coordinateArg2, coordinateValueArg2)
+    fCollRelevant = fCollArg[coordinateValueArg1, coordinateValueArg2,coordinateValueArg3] #selectAtEdge(fCollArg,coordinateArg1, coordinateValueArg1, coordinateArg2, coordinateValueArg2)
+    fOut = copy.deepcopy(fArg)
+    fRelevant =  fOut[coordinateValueArg1, coordinateValueArg2,coordinateValueArg3]
+    indicesMissing = getMissingDistributionFunctionIndicesAtCorner(fArg, coordinateValueArg1, coordinateValueArg2, coordinateValueArg3)
+
+    sigmaBd = 1.0/3.0 * (sigmaBdArg1 + sigmaBdArg2 + sigmaBdArg3)
+    PBd = reduceSurfaceToCorner(computePBd(sigmaBd, fArg, ccArg, cArg, uArg, dxArg, laArg, mueArg, rhoArg, rho0Arg, 'x',
+                     coordinateValueArg1), coordinateValueArg2, coordinateValueArg3)
+
+    #for i in range(0, len(fRelevant)):
+    for l in indicesMissing:
+        oL = getOppositeLatticeDirection(l)
+
+        tmp1 = PBd[l] - rhoBd[l] * csArg ** 2 * np.identity(3,dtype=float)
+        tmp2 = np.outer(ccArg[oL], ccArg[oL].transpose()) - csArg ** 2 * np.identity(3, dtype=float)
+        fRelevant[l] = - fCollRelevant[ oL] + 2.0 * wArg[oL] * (rhoBd[l] + 1.0 / (2.0 * csArg ** 4) * (np.tensordot(tmp1,tmp2, axes=2)))
+
+    return fOut
+
+
+
+
+
+# def applyNeumannBoundaryConditionsAtEdge(fArg, fCollArg, rhoArg, ccArg, coordinateArg1='x', coordinateValueArg1=0, coordinateArg2='y', coordinateValueArg2=0):
+#     def computeRhoBdWithoutExtrapolation(rhoArg, ccArg, coordinateArg1='x', coordinateValueArg1=0, coordinateArg2='x', coordinateValueArg2=0:
+#         rhoAtCoordinate = selectAtCoordinate(rhoArg, coordinateArg1, coordinateValueArg1)
+#         divUBd = np.zeros((len(divUArg), len(divUArg[0]), len(ccArg)), dtype=float)
+#
+#         for i in range(0, len(divUBd)):
+#             for j in range(0, len(divUBd[i])):
+#                 for l in range(0, len(divUBd[i][j])):
+#                     divUBd[i, j, l] = divUAtCoordinate[i, j]
+#         return divUBd
+#
+#     rhoBd = computeRhoBdWithoutExtrapolation(rhoArg, ccArg, coordinateArg, coordinateValueArg)
+#     fCollRelevant = selectAtCoordinate(fCollArg, coordinateArg, coordinateValueArg)
+#     pass

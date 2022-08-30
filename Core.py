@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 
 
 def zerothMoment(fArg):
@@ -122,7 +123,7 @@ def computeU(uOldArg, rhoArg, jArg, dtArg):
     return uNew
 
 
-def computeDivergenceU(uArg, dxArg):
+def computeDivergenceUFromDisplacementField(uArg, dxArg):
     divUOut = np.zeros((len(uArg), len(uArg[0]), len(uArg[0][0])), dtype=float)
     uX = np.zeros((len(uArg), len(uArg[0]), len(uArg[0][0])), dtype=float)
     uY = np.zeros((len(uArg), len(uArg[0]), len(uArg[0][0])), dtype=float)
@@ -147,10 +148,18 @@ def computeDivergenceU(uArg, dxArg):
 
     return divUOut
 
+def computeDivergenceUFromDensity(rhoArg,rho0Arg):
+    divUOut = np.zeros(rhoArg.shape, dtype=float)
+    for i in range(0,len(divUOut)):
+        for j in range(0,len(divUOut[0])):
+            for k in range(0,len(divUOut[0][0])):
+                divUOut[i,j,k] = (rhoArg[i,j,k] - rho0Arg) /rho0Arg
+    return divUOut
+
 def computeSigma(PArg, divUArg, laArg, mueArg):
     sigmaOut = np.zeros(PArg.shape, dtype=float) # TODO how is sigma computed?
     for i in range(0, len(sigmaOut)):
         for j in range(0, len(sigmaOut[0])):
             for k in range(0, len(sigmaOut[0][0])):
-                sigmaOut[i,j,k] = PArg[i, j, k] + (laArg-mueArg) * divUArg[i, j, k] * np.identity(3, dtype=float)
+                sigmaOut[i,j,k] = -PArg[i, j, k] + (laArg-mueArg) * divUArg[i, j, k] * np.identity(3, dtype=float)
     return sigmaOut
