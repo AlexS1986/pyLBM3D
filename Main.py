@@ -25,7 +25,7 @@ for i in range(0, len(xx)):
 cs = math.sqrt(mue/rho0)
 dt = 1.0 / math.sqrt(3.0) * dx / cs
 c = dx/dt
-tau = 0.55*dt
+tau = 0.505*dt
 
 #f = np.zeros((m, n, o, 27), dtype = float)
 #fNew = np.zeros((m, n, o, 27), dtype = float)
@@ -61,60 +61,142 @@ while(t <= tMax):
 
 
     fColl = Core.collide(f,fEq,psi,dt,tau)
+    #print(fNew)
     fNew = Core.stream(fColl,cc,c)
+    #print(fNew)
 
+    sigmaBCXMin = np.array([[0.001, 0.0, 0.0],
+                            [0.0, np.nan, np.nan],
+                            [0.0, np.nan, np.nan]])
+    sigmaBCXMax = sigmaBCXMin
+
+    sigmaBCYMin = np.array([[np.nan, 0, np.nan],
+                        [0, 0, 0],
+                        [np.nan, 0, np.nan]])
+    sigmaBCYMax = sigmaBCYMin
+
+    sigmaBCZMin = sigmaBC = np.array([[np.nan, np.nan, 0],
+                        [np.nan, np.nan, 0],
+                        [0.0, 0.0, 0.0]])
+    sigmaBCZMax = sigmaBCZMin
 
 
     # apply BC at z=0
-    sigmaBC = np.array([ [np.nan, np.nan, 0],
-                         [np.nan, np.nan, 0],
-                         [0.0, 0.0, 0.0]])
-    fNew = BoundaryConditions.applyNeumannBoundaryConditions(fNew,fColl,u,rho, rho0, cs,cc,c,w,sigmaBC,dx,lam,mue,'z',0)
+    fNew = BoundaryConditions.applyNeumannBoundaryConditions(fNew,fColl,u,rho, rho0, cs,cc,c,w,sigmaBCZMin,dx,lam,mue,'z',0)
 
     # apply BC at z=max
-    sigmaBC = np.array([[np.nan, np.nan, 0],
-                        [np.nan, np.nan, 0],
-                        [0.0, 0.0, 0.0]])
-    fNew = BoundaryConditions.applyNeumannBoundaryConditions(fNew, fColl, u, rho, rho0, cs, cc, c, w, sigmaBC, dx, lam, mue,
+
+    fNew = BoundaryConditions.applyNeumannBoundaryConditions(fNew, fColl, u, rho, rho0, cs, cc, c, w, sigmaBCZMax, dx, lam, mue,
                                                              'z', maxZ-1)
     # apply BC at y=0
-    sigmaBC = np.array([[np.nan, 0, np.nan],
-                        [0, 0, 0],
-                        [np.nan, 0, np.nan]])
-    fNew = BoundaryConditions.applyNeumannBoundaryConditions(fNew, fColl, u, rho, rho0, cs, cc, c, w, sigmaBC, dx, lam, mue,
+    fNew = BoundaryConditions.applyNeumannBoundaryConditions(fNew, fColl, u, rho, rho0, cs, cc, c, w, sigmaBCYMin, dx, lam, mue,
                                                              'y', 0)
 
     # apply BC at y=max
-    sigmaBC = np.array([[np.nan, 0, np.nan],
-                        [0, 0, 0],
-                        [np.nan, 0, np.nan]])
-    fNew = BoundaryConditions.applyNeumannBoundaryConditions(fNew, fColl, u, rho, rho0, cs, cc, c, w, sigmaBC, dx, lam, mue,
+    fNew = BoundaryConditions.applyNeumannBoundaryConditions(fNew, fColl, u, rho, rho0, cs, cc, c, w, sigmaBCYMax, dx, lam, mue,
                                                              'y', maxY - 1)
-
-
-
     # apply BC at x=0
-    sigmaBC = np.array([[0.000,   0.0, 0.0],
-                        [0.0, np.nan, np.nan],
-                        [0.0, np.nan, np.nan]])
-    fNew = BoundaryConditions.applyNeumannBoundaryConditions(fNew, fColl, u, rho, rho0, cs, cc, c, w, sigmaBC, dx, lam, mue,
+    fNew = BoundaryConditions.applyNeumannBoundaryConditions(fNew, fColl, u, rho, rho0, cs, cc, c, w, sigmaBCXMin, dx, lam, mue,
                                                              'x', 0)
 
     # apply BC at x=max
-    sigmaBC = np.array([[0.000,   0.0, 0.0],
-                        [0.0,    np.nan, np.nan],
-                        [0.0,    np.nan, np.nan]])
-    fNew = BoundaryConditions.applyNeumannBoundaryConditions(fNew, fColl, u, rho, rho0, cs, cc, c, w, sigmaBC, dx, lam, mue,
+    fNew = BoundaryConditions.applyNeumannBoundaryConditions(fNew, fColl, u, rho, rho0, cs, cc, c, w, sigmaBCXMax, dx, lam, mue,
                                                              'x', maxX - 1)
 
+    ## Edges ##
+
+
+
+    # apply BC at edge x = min, y = min
+
+    fNew = BoundaryConditions.applyNeumannBoundaryConditionsAtEdge(fNew, fColl, u, rho, rho0, cs, cc, c, w, sigmaBCXMin,
+                                                                   sigmaBCYMin, dx, lam, mue, 'x', 0, 'y', 0)
+
     # apply BC at edge x = min, y = max
-    sigmaBCXMax = np.array([[0.000, 0.0, 0.0],
-                        [0.0, np.nan, np.nan],
-                        [0.0, np.nan, np.nan]])
-    sigmaBCYMAX = sigmaBC = np.array([[np.nan, 0, np.nan],
-                        [0, 0, 0],
-                        [np.nan, 0, np.nan]])
-    fNew = BoundaryConditions.applyNeumannBoundaryConditionsAtEdge(fNew,fColl,u,rho,rho0,cs,cc,c,w,sigmaBCXMax,sigmaBCYMAX,dx,lam,mue,'x',0,'y',maxY-1)
+    fNew = BoundaryConditions.applyNeumannBoundaryConditionsAtEdge(fNew,fColl,u,rho,rho0,cs,cc,c,w,sigmaBCXMin,sigmaBCYMax,dx,lam,mue,'x',0,'y',maxY-1)
+
+    # apply BC at edge x = min, z = min
+    fNew = BoundaryConditions.applyNeumannBoundaryConditionsAtEdge(fNew, fColl, u, rho, rho0, cs, cc, c, w, sigmaBCXMin,
+                                                                   sigmaBCZMin, dx, lam, mue, 'x', 0, 'z', 0)
+
+    # apply BC at edge x = min, z = max
+    fNew = BoundaryConditions.applyNeumannBoundaryConditionsAtEdge(fNew, fColl, u, rho, rho0, cs, cc, c, w, sigmaBCXMin,
+                                                                   sigmaBCZMax, dx, lam, mue, 'x', 0, 'z', maxZ-1)
+
+
+
+
+    # apply BC at edge x = max, y = min
+    fNew = BoundaryConditions.applyNeumannBoundaryConditionsAtEdge(fNew, fColl, u, rho, rho0, cs, cc, c, w, sigmaBCXMax,
+                                                                   sigmaBCYMin, dx, lam, mue, 'x', maxX-1, 'y', 0)
+
+    # apply BC at edge x = max, y = max
+    #sigmaBCYMax = sigmaBCYMin
+    fNew = BoundaryConditions.applyNeumannBoundaryConditionsAtEdge(fNew,fColl,u,rho,rho0,cs,cc,c,w,sigmaBCXMax,
+                                                                   sigmaBCYMax,dx,lam,mue,'x',0,'y',maxY-1)
+
+    # apply BC at edge x = max, z = min
+    fNew = BoundaryConditions.applyNeumannBoundaryConditionsAtEdge(fNew, fColl, u, rho, rho0, cs, cc, c, w, sigmaBCXMax,
+                                                                   sigmaBCZMin, dx, lam, mue, 'x', maxX-1, 'z', 0)
+
+    # apply BC at edge x = max, z = max
+    fNew = BoundaryConditions.applyNeumannBoundaryConditionsAtEdge(fNew, fColl, u, rho, rho0, cs, cc, c, w, sigmaBCXMax,
+                                                                   sigmaBCZMax, dx, lam, mue, 'x', maxX-1, 'z', maxZ-1)
+
+
+
+
+    # apply BC at edge y = min, z = min
+    fNew = BoundaryConditions.applyNeumannBoundaryConditionsAtEdge(fNew, fColl, u, rho, rho0, cs, cc, c, w, sigmaBCYMin,
+                                                                   sigmaBCZMin, dx, lam, mue, 'y', 0, 'z', 0)
+
+    # apply BC at edge y = min, z = max
+    fNew = BoundaryConditions.applyNeumannBoundaryConditionsAtEdge(fNew, fColl, u, rho, rho0, cs, cc, c, w, sigmaBCYMin,
+                                                                   sigmaBCZMax, dx, lam, mue, 'y', 0, 'z', maxZ-1)
+
+    # apply BC at edge y = max, z = min
+    fNew = BoundaryConditions.applyNeumannBoundaryConditionsAtEdge(fNew, fColl, u, rho, rho0, cs, cc, c, w, sigmaBCYMax,
+                                                                   sigmaBCZMin, dx, lam, mue, 'y', maxY-1, 'z', 0)
+
+    # apply BC at edge y = max, z = max
+    fNew = BoundaryConditions.applyNeumannBoundaryConditionsAtEdge(fNew, fColl, u, rho, rho0, cs, cc, c, w, sigmaBCYMax,
+                                                                   sigmaBCZMax, dx, lam, mue, 'y', maxY-1, 'z', maxZ-1)
+
+
+    ## Corners ##
+
+    #xmin, ymin, zmin
+    fNew = BoundaryConditions.applyNeumannBoundaryConditionsAtCorner(fNew,fColl,u,rho,rho0,cs,cc,c,w,sigmaBCXMin,sigmaBCYMin,sigmaBCZMin,dx,lam,mue,0,0,0)
+
+    # xmax, ymin, zmin
+    fNew = BoundaryConditions.applyNeumannBoundaryConditionsAtCorner(fNew, fColl, u, rho, rho0, cs, cc, c, w,
+                                                                     sigmaBCXMax, sigmaBCYMin, sigmaBCZMin, dx, lam,
+                                                                     mue, maxX-1, 0, 0)
+    # xmax, ymax, zmin
+    fNew = BoundaryConditions.applyNeumannBoundaryConditionsAtCorner(fNew, fColl, u, rho, rho0, cs, cc, c, w,
+                                                                     sigmaBCXMax, sigmaBCYMax, sigmaBCZMin, dx, lam,
+                                                                     mue, maxX - 1, maxY-1, 0)
+    # xmin, ymax, zmin
+    fNew = BoundaryConditions.applyNeumannBoundaryConditionsAtCorner(fNew, fColl, u, rho, rho0, cs, cc, c, w,
+                                                                     sigmaBCXMin, sigmaBCYMax, sigmaBCZMin, dx, lam,
+                                                                     mue, 0, maxY-1, 0)
+
+
+    #xmin, ymin, zmax
+    fNew = BoundaryConditions.applyNeumannBoundaryConditionsAtCorner(fNew,fColl,u,rho,rho0,cs,cc,c,w,sigmaBCXMin,sigmaBCYMin,sigmaBCZMin,dx,lam,mue,0,0,maxZ-1)
+
+    # xmax, ymin, zmax
+    fNew = BoundaryConditions.applyNeumannBoundaryConditionsAtCorner(fNew, fColl, u, rho, rho0, cs, cc, c, w,
+                                                                     sigmaBCXMax, sigmaBCYMin, sigmaBCZMax, dx, lam,
+                                                                     mue, maxX-1, 0, maxZ-1)
+    # xmax, ymax, zmax
+    fNew = BoundaryConditions.applyNeumannBoundaryConditionsAtCorner(fNew, fColl, u, rho, rho0, cs, cc, c, w,
+                                                                     sigmaBCXMax, sigmaBCYMax, sigmaBCZMax, dx, lam,
+                                                                     mue, maxX - 1, maxY-1, maxZ-1)
+    # xmin, ymax, zmax
+    fNew = BoundaryConditions.applyNeumannBoundaryConditionsAtCorner(fNew, fColl, u, rho, rho0, cs, cc, c, w,
+                                                                     sigmaBCXMin, sigmaBCYMax, sigmaBCZMax, dx, lam,
+                                                                     mue, 0, maxY-1, maxZ-1)
 
     f = fNew
 

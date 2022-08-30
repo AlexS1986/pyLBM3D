@@ -58,9 +58,10 @@ def equilibriumDistribution(rhoArg, jArg, PArg, ccArg, wArg, csArg):
 
 import Util
 
-def stream(fArg, ccArg , cArg):
-   fOut = np.zeros((len(fArg), len(fArg[0]), len(fArg[0][0]), 27), dtype=float)
-   np.zeros((len(fArg), len(fArg[0]), len(fArg[0][0]), 27), dtype=float)
+def stream(fCollArg, ccArg , cArg):
+   #fOut = np.zeros((len(fArg), len(fArg[0]), len(fArg[0][0]), 27), dtype=float)
+   fOut = copy.deepcopy(fCollArg)
+   #np.zeros((len(fArg), len(fArg[0]), len(fArg[0][0]), 27), dtype=float)
 
    for i in range(0, len(fOut)):   # f0
        for j in range(0, len(fOut[0])):
@@ -70,7 +71,9 @@ def stream(fArg, ccArg , cArg):
                    indicesToStreamTo = [int(i + cL[0]), int(j + cL[1]), int(k + cL[2])]
                    if Util.checkIfIndicesInArrayBounds(indicesToStreamTo[0], indicesToStreamTo[1], indicesToStreamTo[2], fOut):
                    #if indicesToStreamTo[0] < len(fOut) and indicesToStreamTo[1] < len(fOut[0]) and indicesToStreamTo[2] < len(fOut[0][0]):
-                       fOut[indicesToStreamTo[0]][indicesToStreamTo[1]][indicesToStreamTo[2]][l] = fArg[i][j][k][l]
+                       fOut[indicesToStreamTo[0]][indicesToStreamTo[1]][indicesToStreamTo[2]][l] = fCollArg[i][j][k][l]
+                   #else:
+                       #print("hi")
    return fOut
 
 

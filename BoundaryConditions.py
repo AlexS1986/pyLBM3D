@@ -394,7 +394,7 @@ def applyNeumannBoundaryConditionsAtEdge(fArg, fCollArg, uArg , rhoArg, rho0Arg,
 
             tmp1 = PBd[i,l] - rhoBd[i,l] * csArg ** 2 * np.identity(3,dtype=float)
             tmp2 = np.outer(ccArg[oL], ccArg[oL].transpose()) - csArg ** 2 * np.identity(3, dtype=float)
-            print(fRelevant.shape)
+            #print(fRelevant.shape)
             fRelevant[i,l] = - fCollRelevant[i,  oL] + 2.0 * wArg[oL] * (rhoBd[i,l] + 1.0 / (2.0 * csArg ** 4) * (np.tensordot(tmp1,tmp2, axes=2)))
 
     return fOut
@@ -412,7 +412,7 @@ def applyNeumannBoundaryConditionsAtCorner(fArg, fCollArg, uArg , rhoArg, rho0Ar
     fRelevant =  fOut[coordinateValueArg1, coordinateValueArg2,coordinateValueArg3]
     indicesMissing = getMissingDistributionFunctionIndicesAtCorner(fArg, coordinateValueArg1, coordinateValueArg2, coordinateValueArg3)
 
-    sigmaBd = 1.0/3.0 * (sigmaBdArg1 + sigmaBdArg2 + sigmaBdArg3)
+    sigmaBd = 1.0/3.0 * (sigmaBdArg1 + sigmaBdArg2 + sigmaBdArg3) # TODO average here okay?
     PBd = reduceSurfaceToCorner(computePBd(sigmaBd, fArg, ccArg, cArg, uArg, dxArg, laArg, mueArg, rhoArg, rho0Arg, 'x',
                      coordinateValueArg1), coordinateValueArg2, coordinateValueArg3)
 
