@@ -38,9 +38,10 @@ def sourceTerm(dxArg, rhoArg, lamArg, mueArg, FArg):
     gradientRho = np.gradient(rhoArg, dxArg, dxArg, dxArg)
     for i in range(0, len(rhoArg)):
         for j in range(0, len(rhoArg[0])):
-            for k in range(0, len(rhoArg[0][0])):
-                sourceTermOut[i][j][k] = FArg + 1.0/rhoArg[i][j][k]*(mueArg-lamArg)*np.array([gradientRho[0][i][j][k], gradientRho[1][i][j][k], gradientRho[2][i][j][k]])
-
+            for k in range(0, len(rhoArg[0][0])): # TODO divide by rho0
+                #sourceTermOut[i][j][k] = FArg + 1.0/rhoArg[i][j][k]*(mueArg-lamArg)*np.array([gradientRho[0][i][j][k], gradientRho[1][i][j][k], gradientRho[2][i][j][k]])
+                sourceTermOut[i][j][k] = FArg + 1.0 / rhoArg[i][j][k] * (mueArg - lamArg) * np.array(
+                    [gradientRho[0][i][j][k], gradientRho[1][i][j][k], gradientRho[2][i][j][k]])
     return sourceTermOut
 
 
@@ -156,7 +157,7 @@ def computeDivergenceUFromDensity(rhoArg,rho0Arg):
     for i in range(0,len(divUOut)):
         for j in range(0,len(divUOut[0])):
             for k in range(0,len(divUOut[0][0])):
-                divUOut[i,j,k] = (rhoArg[i,j,k] - rho0Arg) /rho0Arg
+                divUOut[i,j,k] = - (rhoArg[i,j,k] - rho0Arg) /rho0Arg
     return divUOut
 
 def computeSigma(PArg, divUArg, laArg, mueArg):
