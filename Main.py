@@ -16,27 +16,29 @@ maxX = 10
 maxY = maxX
 maxZ = maxX
 dx = 0.1  # spacing
-xx = np.zeros((maxX, maxY, maxZ, 3), dtype = float)
+xx = np.zeros((maxX, maxY, maxZ, 3), dtype = np.double)
 for i in range(0, len(xx)):
     for j in range(0,len(xx[0])):
         for k in range(0, len(xx[0][0])):
-            xx[i,j,k] = np.array([float(i) *dx, float(j) * dx, float(k) * dx], dtype=float)
+            xx[i,j,k] = np.array([np.double(i) *dx, np.double(j) * dx, np.double(k) * dx], dtype=np.double)
 
 cs = math.sqrt(mue/rho0)
 dt = 1.0 / math.sqrt(3.0) * dx / cs
 c = dx/dt
-tau = 0.8*dt
+tau = 2.0*dt
 
-#f = np.zeros((m, n, o, 27), dtype = float)
-#fNew = np.zeros((m, n, o, 27), dtype = float)
-#fEq = np.zeros((m, n, o, 27), dtype = float)
+#print(np.__version__)
+
+#f = np.zeros((m, n, o, 27), dtype = np.double)
+#fNew = np.zeros((m, n, o, 27), dtype = np.double)
+#fEq = np.zeros((m, n, o, 27), dtype = np.double)
 
 import Settings as SettingsModule
 [cc, w] = SettingsModule.getLatticeVelocitiesWeights(c)
 
 import Core
 [f,j,P,u] = Core.intitialize(rho0, cs, cc, w, maxX, maxY, maxZ)
-F = np.zeros((3), dtype=float)
+F = np.zeros((3), dtype=np.double)
 
 import BoundaryConditions
 import PostProcessing
@@ -45,11 +47,11 @@ tMax = 2.0
 t = 0.0
 k = int(0)
 while(t <= tMax):
-    fNew = np.zeros((maxX,maxY,maxZ,27), dtype=float)
+    fNew = np.zeros((maxX,maxY,maxZ,27), dtype=np.double)
     fNew.fill(np.nan)
 
     rho = Core.computeRho(f)
-    S = Core.sourceTerm(dx,rho,lam,mue,F)
+    S = Core.sourceTerm(dx,rho,rho0,lam,mue,F)
     j = Core.computeJ(f,S,cc,dt)
     P = Core.computeP(f,cc)
     u = Core.computeU(u, rho, j, dt)

@@ -16,42 +16,42 @@ def firstMoment(fArg, ccArg):
     for i in range(0, len(fArg)):
         for j in range(0, len(fArg[0])):
             for k in range(0, len(fArg[0][0])):
-                firstMomentOut[i][j][k] = np.zeros(3, dtype=float)
+                firstMomentOut[i][j][k] = np.zeros(3, dtype=np.double)
                 for l in range(0, len(ccArg)):
                     firstMomentOut[i][j][k] = firstMomentOut[i][j][k] + fArg[i][j][k][l] * ccArg[l]
     return firstMomentOut
 
 
 def secondMoment(fArg, ccArg):
-    secondMomentOut = np.zeros((len(fArg), len(fArg[0]), len(fArg[0][0]), 3, 3), dtype=float)
+    secondMomentOut = np.zeros((len(fArg), len(fArg[0]), len(fArg[0][0]), 3, 3), dtype=np.double)
     for i in range(0, len(fArg)):
         for j in range(0, len(fArg[0])):
             for k in range(0, len(fArg[0][0])):
-                secondMomentOut[i][j][k] = np.zeros((3, 3), dtype=float)
+                secondMomentOut[i][j][k] = np.zeros((3, 3), dtype=np.double)
                 for l in range(0, len(ccArg)):
                     secondMomentOut[i][j][k] = secondMomentOut[i][j][k] + fArg[i][j][k][l] * np.outer(ccArg[l], ccArg[l].transpose())
     return secondMomentOut
 
 
-def sourceTerm(dxArg, rhoArg, lamArg, mueArg, FArg):
-    sourceTermOut = np.zeros((len(rhoArg), len(rhoArg[0]), len(rhoArg[0][0]), 3), dtype=float)
-    gradientRho = np.gradient(rhoArg, dxArg, dxArg, dxArg)
+def sourceTerm(dxArg, rhoArg, rho0Arg, lamArg, mueArg, FArg):
+    sourceTermOut = np.zeros((len(rhoArg), len(rhoArg[0]), len(rhoArg[0][0]), 3), dtype=np.double)
+    gradientRho = np.gradient(rhoArg, dxArg, dxArg, dxArg, axis=None,edge_order=2)
     for i in range(0, len(rhoArg)):
         for j in range(0, len(rhoArg[0])):
             for k in range(0, len(rhoArg[0][0])): # TODO divide by rho0
                 #sourceTermOut[i][j][k] = FArg + 1.0/rhoArg[i][j][k]*(mueArg-lamArg)*np.array([gradientRho[0][i][j][k], gradientRho[1][i][j][k], gradientRho[2][i][j][k]])
-                sourceTermOut[i][j][k] = FArg + 1.0 / rhoArg[i][j][k] * (mueArg - lamArg) * np.array(
+                sourceTermOut[i][j][k] = FArg + 1.0 / rho0Arg * (mueArg - lamArg) * np.array(
                     [gradientRho[0][i][j][k], gradientRho[1][i][j][k], gradientRho[2][i][j][k]])
     return sourceTermOut
 
 
 def equilibriumDistribution(rhoArg, jArg, PArg, ccArg, wArg, csArg):
-    feqOut = np.zeros((len(rhoArg), len(rhoArg[0]), len(rhoArg[0][0]), 27), dtype=float)
+    feqOut = np.zeros((len(rhoArg), len(rhoArg[0]), len(rhoArg[0][0]), 27), dtype=np.double)
     for i in range(0, len(feqOut)):
         for j in range(0, len(feqOut[0])):
             for k in range(0, len(feqOut[0][0])):
                 for l in range(0, len(feqOut[0][0][0])):
-                    tmp2 = np.tensordot((PArg[i][j][k] - rhoArg[i][j][k] * csArg ** 2 * np.identity(3, dtype=float)), (np.outer(ccArg[l], ccArg[l].transpose()) - csArg ** 2 * np.identity(3, dtype=float)), axes=2)
+                    tmp2 = np.tensordot((PArg[i][j][k] - rhoArg[i][j][k] * csArg ** 2 * np.identity(3, dtype=np.double)), (np.outer(ccArg[l], ccArg[l].transpose()) - csArg ** 2 * np.identity(3, dtype=np.double)), axes=2)
                     tmp1 = np.tensordot(ccArg[l], jArg[i][j][k], axes=1)
                     feqOut[i][j][k][l] = wArg[l] * (rhoArg[i][j][k] + 1.0/(csArg ** 2) * tmp1 + 1.0 / (2.0 * csArg ** 4) * tmp2)
     return feqOut
@@ -60,9 +60,9 @@ def equilibriumDistribution(rhoArg, jArg, PArg, ccArg, wArg, csArg):
 import Util
 
 def stream(fCollArg, ccArg , cArg):
-   #fOut = np.zeros((len(fArg), len(fArg[0]), len(fArg[0][0]), 27), dtype=float)
+   #fOut = np.zeros((len(fArg), len(fArg[0]), len(fArg[0][0]), 27), dtype=np.double)
    fOut = copy.deepcopy(fCollArg)
-   #np.zeros((len(fArg), len(fArg[0]), len(fArg[0][0]), 27), dtype=float)
+   #np.zeros((len(fArg), len(fArg[0]), len(fArg[0][0]), 27), dtype=np.double)
 
    for i in range(0, len(fOut)):   # f0
        for j in range(0, len(fOut[0])):
@@ -79,12 +79,12 @@ def stream(fCollArg, ccArg , cArg):
 
 
 def collide(fArg, feqArg, psiArg, dtArg, tauArg):
-    # fCollOut = np.zeros((len(fArg), len(fArg[0]), len(fArg[0][0]), len(fArg[0][0][0])), dtype=float)
+    # fCollOut = np.zeros((len(fArg), len(fArg[0]), len(fArg[0][0]), len(fArg[0][0][0])), dtype=np.double)
     fCollOut = fArg - dtArg/tauArg * (fArg - feqArg) + (1.0 - dtArg / (2.0 * tauArg)) * dtArg * psiArg
     return fCollOut
 
 def sourceTermPsi(SArg, ccArg, wArg, csArg):
-    psiOut = np.zeros((len(SArg), len(SArg[0]), len(SArg[0][0]), 27), dtype=float)
+    psiOut = np.zeros((len(SArg), len(SArg[0]), len(SArg[0][0]), 27), dtype=np.double)
     for i in range(0, len(psiOut)):  # f0
         for j in range(0, len(psiOut[0])):
             for k in range(0, len(psiOut[0][0])):
@@ -93,10 +93,10 @@ def sourceTermPsi(SArg, ccArg, wArg, csArg):
     return psiOut
 
 def intitialize(rho0Arg, csArg, ccArg, wArg, mArg, nArg, oArg):
-    P0 = np.zeros((mArg, nArg, oArg, 3, 3), dtype=float)
-    j0 = np.zeros((mArg, nArg, oArg, 3), dtype=float)
-    u0 = np.zeros((mArg, nArg, oArg, 3), dtype=float)
-    rho0 = np.zeros((mArg, nArg, oArg), dtype=float)
+    P0 = np.zeros((mArg, nArg, oArg, 3, 3), dtype=np.double)
+    j0 = np.zeros((mArg, nArg, oArg, 3), dtype=np.double)
+    u0 = np.zeros((mArg, nArg, oArg, 3), dtype=np.double)
+    rho0 = np.zeros((mArg, nArg, oArg), dtype=np.double)
     rho0.fill(rho0Arg)
     fOut = equilibriumDistribution(rho0, j0, P0, ccArg, wArg, csArg)
     return [fOut, j0, P0, u0]
@@ -119,7 +119,7 @@ def calculateMoments(fArg, SArg, ccArg, dtArg):
 
 
 def computeU(uOldArg, rhoArg, jArg, dtArg):
-    uNew = np.zeros((len(uOldArg), len(uOldArg[0]), len(uOldArg[0][0]), 3), dtype=float)
+    uNew = np.zeros((len(uOldArg), len(uOldArg[0]), len(uOldArg[0][0]), 3), dtype=np.double)
     for i in range(0, len(uOldArg)):  # f0
         for j in range(0, len(uOldArg[0])):
             for k in range(0, len(uOldArg[0][0])):
@@ -128,10 +128,10 @@ def computeU(uOldArg, rhoArg, jArg, dtArg):
 
 
 def computeDivergenceUFromDisplacementField(uArg, dxArg):
-    divUOut = np.zeros((len(uArg), len(uArg[0]), len(uArg[0][0])), dtype=float)
-    uX = np.zeros((len(uArg), len(uArg[0]), len(uArg[0][0])), dtype=float)
-    uY = np.zeros((len(uArg), len(uArg[0]), len(uArg[0][0])), dtype=float)
-    uZ = np.zeros((len(uArg), len(uArg[0]), len(uArg[0][0])), dtype=float)
+    divUOut = np.zeros((len(uArg), len(uArg[0]), len(uArg[0][0])), dtype=np.double)
+    uX = np.zeros((len(uArg), len(uArg[0]), len(uArg[0][0])), dtype=np.double)
+    uY = np.zeros((len(uArg), len(uArg[0]), len(uArg[0][0])), dtype=np.double)
+    uZ = np.zeros((len(uArg), len(uArg[0]), len(uArg[0][0])), dtype=np.double)
 
 
     for i in range(0, len(uArg)):
@@ -141,9 +141,9 @@ def computeDivergenceUFromDisplacementField(uArg, dxArg):
                 uY[i][j][k] = uArg[i][j][k][1]
                 uZ[i][j][k] = uArg[i][j][k][2]
 
-    gradientUx = np.gradient(uX, dxArg, dxArg, dxArg)
-    gradientUy = np.gradient(uY, dxArg, dxArg, dxArg)
-    gradientUz = np.gradient(uZ, dxArg, dxArg, dxArg)
+    gradientUx = np.gradient(uX, dxArg, dxArg, dxArg, edge_order=2)
+    gradientUy = np.gradient(uY, dxArg, dxArg, dxArg, edge_order=2)
+    gradientUz = np.gradient(uZ, dxArg, dxArg, dxArg, edge_order=2)
 
     for i in range(0, len(uArg)):
         for j in range(0, len(uArg[0])):
@@ -153,7 +153,7 @@ def computeDivergenceUFromDisplacementField(uArg, dxArg):
     return divUOut
 
 def computeDivergenceUFromDensity(rhoArg,rho0Arg):
-    divUOut = np.zeros(rhoArg.shape, dtype=float)
+    divUOut = np.zeros(rhoArg.shape, dtype=np.double)
     for i in range(0,len(divUOut)):
         for j in range(0,len(divUOut[0])):
             for k in range(0,len(divUOut[0][0])):
@@ -161,9 +161,9 @@ def computeDivergenceUFromDensity(rhoArg,rho0Arg):
     return divUOut
 
 def computeSigma(PArg, divUArg, laArg, mueArg):
-    sigmaOut = np.zeros(PArg.shape, dtype=float) # TODO how is sigma computed?
+    sigmaOut = np.zeros(PArg.shape, dtype=np.double) # TODO how is sigma computed?
     for i in range(0, len(sigmaOut)):
         for j in range(0, len(sigmaOut[0])):
             for k in range(0, len(sigmaOut[0][0])):
-                sigmaOut[i,j,k] = -PArg[i, j, k] + (laArg-mueArg) * divUArg[i, j, k] * np.identity(3, dtype=float)
+                sigmaOut[i,j,k] = -PArg[i, j, k] + (laArg-mueArg) * divUArg[i, j, k] * np.identity(3, dtype=np.double)
     return sigmaOut

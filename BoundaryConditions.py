@@ -121,7 +121,7 @@ def interpolationNeighborExists(indicesArg):
 def extrapolateScalarToBd(rhoArg, ccArg, cArg, coordinateArg='x', coordinateValueArg=0):
     rhoBoundary = copy.deepcopy(selectAtCoordinate(rhoArg, coordinateArg, coordinateValueArg))
     IndicesInterpolationNeigbors = selectInterpolationNeighbors(rhoArg, ccArg, cArg, coordinateArg, coordinateValueArg)
-    rhoBoundaryOut = np.zeros((len(rhoBoundary), len(rhoBoundary[0]), 27), dtype=float)
+    rhoBoundaryOut = np.zeros((len(rhoBoundary), len(rhoBoundary[0]), 27), dtype=np.double)
     for i in range(0, len(rhoBoundaryOut)):
         for j in range(0, len(rhoBoundaryOut[0])):
             for l in range(0, len(rhoBoundaryOut[0][0])):
@@ -136,7 +136,7 @@ def extrapolateTensorToBd(sigmaArg, ccArg, cArg, coordinateArg='x', coordinateVa
 
     sigmaBoundary = copy.deepcopy(selectAtCoordinate(sigmaArg, coordinateArg, coordinateValueArg))
     IndicesInterpolationNeigbors = selectInterpolationNeighbors(sigmaArg, ccArg, cArg, coordinateArg, coordinateValueArg)
-    sigmaBdOut = np.zeros((len(sigmaBoundary), len(sigmaBoundary[0]), 27, 3, 3), dtype=float)
+    sigmaBdOut = np.zeros((len(sigmaBoundary), len(sigmaBoundary[0]), 27, 3, 3), dtype=np.double)
     for i in range(0, len(sigmaBdOut)):
         for j in range(0, len(sigmaBdOut[0])):
             for l in range(0, len(sigmaBdOut[0][0])):
@@ -156,7 +156,7 @@ def getOppositeLatticeDirection(latticeDirection=0): # fits for Krueger conventi
 
 def applyDirichletBoundaryConditions(fArg, fCollArg, rhoArg, csArg, ccArg, cArg, wArg, uBdArg, coordinateArg='x', coordinateValueArg=0):  # TODO not defined how edges/corners are handled
     rhoBd = extrapolateScalarToBd(rhoArg, ccArg, cArg, coordinateArg, coordinateValueArg) # needs to be computed for lattice link
-    jBd = np.zeros((len(rhoBd), len(rhoBd[0]), 27, 3), dtype=float)
+    jBd = np.zeros((len(rhoBd), len(rhoBd[0]), 27, 3), dtype=np.double)
     for i in range(0, len(jBd)):
         for j in range(0, len(jBd[0])):
             for l in range(0, 27):
@@ -196,7 +196,7 @@ def computePBd(sigmaBC, fArg, ccArg, cArg, uArg, dxArg, laArg, mueArg, rhoArg, r
 
     def computeSigmaBdWithoutExtrapolation(sigmaArg, ccArg, coordinateArg,coordinateValueArg):
         sigmaAtCoordinate = selectAtCoordinate(sigmaArg,coordinateArg,coordinateValueArg)
-        sigmaBd = np.zeros((len(sigmaArg),len(sigmaArg[0]),len(ccArg),3,3), dtype=float)
+        sigmaBd = np.zeros((len(sigmaArg),len(sigmaArg[0]),len(ccArg),3,3), dtype=np.double)
 
         for i in range(0, len(sigmaBd)):
             for j in range(0, len(sigmaBd[i])):
@@ -206,7 +206,7 @@ def computePBd(sigmaBC, fArg, ccArg, cArg, uArg, dxArg, laArg, mueArg, rhoArg, r
 
     def computeDivUBdWithoutExtrapolation(divUArg, ccArg, coordinateArg, coordinateValueArg):
         divUAtCoordinate = selectAtCoordinate(divU, coordinateArg, coordinateValueArg)
-        divUBd = np.zeros((len(divUArg), len(divUArg[0]), len(ccArg)), dtype=float)
+        divUBd = np.zeros((len(divUArg), len(divUArg[0]), len(ccArg)), dtype=np.double)
 
         for i in range(0, len(divUBd)):
             for j in range(0, len(divUBd[i])):
@@ -225,16 +225,16 @@ def computePBd(sigmaBC, fArg, ccArg, cArg, uArg, dxArg, laArg, mueArg, rhoArg, r
     #divUBd = extrapolateScalarToBd(divU, ccArg, cArg, coordinateArg, coordinateValueArg) #with extrapolation
     divUBd = computeDivUBdWithoutExtrapolation(divU,ccArg,coordinateArg,coordinateValueArg) # without extrapolation
     #print(divUBd.shape)
-    Pbd = np.zeros(sigmaBd.shape, dtype=float)
+    Pbd = np.zeros(sigmaBd.shape, dtype=np.double)
     for i in range(0, len(sigmaBd)):
         for j in range(0, len(sigmaBd[i])):
             for l in range(0, len(sigmaBd[i][j])):
-                Pbd[i,j,l] = -sigmaBd[i,j,l] + (laArg - mueArg) * divUBd[i,j,l] * np.identity(3, dtype=float)
+                Pbd[i,j,l] = -sigmaBd[i,j,l] + (laArg - mueArg) * divUBd[i,j,l] * np.identity(3, dtype=np.double)
     return Pbd
 
 def computeRhoBdWithoutExtrapolation(rhoArg, ccArg, coordinateArg,coordinateValueArg):
     rhoAtCoordinate = selectAtCoordinate(rhoArg,coordinateArg,coordinateValueArg)
-    rhoBd = np.zeros((len(rhoArg),len(rhoArg[0]),len(ccArg)), dtype=float)
+    rhoBd = np.zeros((len(rhoArg),len(rhoArg[0]),len(ccArg)), dtype=np.double)
 
     for i in range(0, len(rhoBd)):
         for j in range(0, len(rhoBd[i])):
@@ -258,8 +258,8 @@ def applyNeumannBoundaryConditions(fArg, fCollArg, uArg , rhoArg, rho0Arg, csArg
             for l in indicesMissing:
                 oL = getOppositeLatticeDirection(l)
 
-                tmp1 = PBd[i,j,l] - rhoBd[i,j,l] * csArg ** 2 * np.identity(3,dtype=float)
-                tmp2 = np.outer(ccArg[oL], ccArg[oL].transpose()) - csArg ** 2 * np.identity(3, dtype=float)
+                tmp1 = PBd[i,j,l] - rhoBd[i,j,l] * csArg ** 2 * np.identity(3,dtype=np.double)
+                tmp2 = np.outer(ccArg[oL], ccArg[oL].transpose()) - csArg ** 2 * np.identity(3, dtype=np.double)
                 fRelevant[i,j,l] = - fCollRelevant[i, j, oL] + 2.0 * wArg[oL] * (rhoBd[i,j,l] + 1.0 / (2.0 * csArg ** 4) * (np.tensordot(tmp1,tmp2, axes=2)))
 
     return fOut
@@ -392,8 +392,8 @@ def applyNeumannBoundaryConditionsAtEdge(fArg, fCollArg, uArg , rhoArg, rho0Arg,
         for l in indicesMissing:
             oL = getOppositeLatticeDirection(l)
 
-            tmp1 = PBd[i,l] - rhoBd[i,l] * csArg ** 2 * np.identity(3,dtype=float)
-            tmp2 = np.outer(ccArg[oL], ccArg[oL].transpose()) - csArg ** 2 * np.identity(3, dtype=float)
+            tmp1 = PBd[i,l] - rhoBd[i,l] * csArg ** 2 * np.identity(3,dtype=np.double)
+            tmp2 = np.outer(ccArg[oL], ccArg[oL].transpose()) - csArg ** 2 * np.identity(3, dtype=np.double)
             #print(fRelevant.shape)
             fRelevant[i,l] = - fCollRelevant[i,  oL] + 2.0 * wArg[oL] * (rhoBd[i,l] + 1.0 / (2.0 * csArg ** 4) * (np.tensordot(tmp1,tmp2, axes=2)))
 
@@ -420,8 +420,8 @@ def applyNeumannBoundaryConditionsAtCorner(fArg, fCollArg, uArg , rhoArg, rho0Ar
     for l in indicesMissing:
         oL = getOppositeLatticeDirection(l)
 
-        tmp1 = PBd[l] - rhoBd[l] * csArg ** 2 * np.identity(3,dtype=float)
-        tmp2 = np.outer(ccArg[oL], ccArg[oL].transpose()) - csArg ** 2 * np.identity(3, dtype=float)
+        tmp1 = PBd[l] - rhoBd[l] * csArg ** 2 * np.identity(3,dtype=np.double)
+        tmp2 = np.outer(ccArg[oL], ccArg[oL].transpose()) - csArg ** 2 * np.identity(3, dtype=np.double)
         fRelevant[l] = - fCollRelevant[ oL] + 2.0 * wArg[oL] * (rhoBd[l] + 1.0 / (2.0 * csArg ** 4) * (np.tensordot(tmp1,tmp2, axes=2)))
 
     return fOut
@@ -433,7 +433,7 @@ def applyNeumannBoundaryConditionsAtCorner(fArg, fCollArg, uArg , rhoArg, rho0Ar
 # def applyNeumannBoundaryConditionsAtEdge(fArg, fCollArg, rhoArg, ccArg, coordinateArg1='x', coordinateValueArg1=0, coordinateArg2='y', coordinateValueArg2=0):
 #     def computeRhoBdWithoutExtrapolation(rhoArg, ccArg, coordinateArg1='x', coordinateValueArg1=0, coordinateArg2='x', coordinateValueArg2=0:
 #         rhoAtCoordinate = selectAtCoordinate(rhoArg, coordinateArg1, coordinateValueArg1)
-#         divUBd = np.zeros((len(divUArg), len(divUArg[0]), len(ccArg)), dtype=float)
+#         divUBd = np.zeros((len(divUArg), len(divUArg[0]), len(ccArg)), dtype=np.double)
 #
 #         for i in range(0, len(divUBd)):
 #             for j in range(0, len(divUBd[i])):
