@@ -2,3 +2,4 @@
 *.xdmf
 vtk/*
 *.pyc
+.DS_STORE
