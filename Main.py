@@ -3,10 +3,10 @@ import math
 import copy
 
 nameOfSimulation = "Block3D"
-pathToVTK = "/Users/alex/Desktop/"
+pathToVTK = "./vtk/"
 
 lam = 1.0
-mue = 1.3
+mue = 1.0
 
 rho0 = 1.0
 P0 = np.zeros((3, 3))
@@ -16,11 +16,11 @@ maxX = 10
 maxY = maxX
 maxZ = maxX
 dx = 0.1  # spacing
-xx = np.zeros((maxX, maxY, maxZ, 3), dtype = np.double)
+xx = np.zeros((maxX, maxY, maxZ, 3), dtype=np.double)
 for i in range(0, len(xx)):
     for j in range(0,len(xx[0])):
         for k in range(0, len(xx[0][0])):
-            xx[i,j,k] = np.array([np.double(i) *dx, np.double(j) * dx, np.double(k) * dx], dtype=np.double)
+            xx[i,j,k] = np.array([np.double(i) * dx, np.double(j) * dx, np.double(k) * dx], dtype=np.double)
 
 cs = math.sqrt(mue/rho0)
 dt = 1.0 / math.sqrt(3.0) * dx / cs
@@ -52,14 +52,15 @@ while(t <= tMax):
 
     rho = Core.computeRho(f)
     S = Core.sourceTerm(dx,rho,rho0,lam,mue,F)
+    jOld = j
     j = Core.computeJ(f,S,cc,dt)
     P = Core.computeP(f,cc)
-    u = Core.computeU(u, rho, j, dt)
+    u = Core.computeU(u, rho, j, jOld, dt,rho0)
 
     PostProcessing.writeVTKMaster(k,nameOfSimulation,pathToVTK,t,xx,u)
 
-    fEq = Core.equilibriumDistribution(rho,j,P,cc,w,cs)
-    psi = Core.sourceTermPsi(S,cc,w,cs)
+    fEq = Core.equilibriumDistribution(rho, j, P, cc, w, cs)
+    psi = Core.sourceTermPsi(S, cc, w, cs)
 
 
     fColl = Core.collide(f,fEq,psi,dt,tau)

@@ -118,39 +118,40 @@ def calculateMoments(fArg, SArg, ccArg, dtArg):
     return [computeRho(fArg), computeJ(fArg, SArg, ccArg, dtArg), computeP(fArg, ccArg)]
 
 
-def computeU(uOldArg, rhoArg, jArg, dtArg):
+def computeU(uOldArg, rhoArg, jArg, jOldArg, dtArg, rho0Arg):
     uNew = np.zeros((len(uOldArg), len(uOldArg[0]), len(uOldArg[0][0]), 3), dtype=np.double)
     for i in range(0, len(uOldArg)):  # f0
         for j in range(0, len(uOldArg[0])):
             for k in range(0, len(uOldArg[0][0])):
-                uNew[i][j][k] = uOldArg[i][j][k] + jArg[i][j][k] / rhoArg[i][j][k] * dtArg
+                #uNew[i][j][k] = uOldArg[i][j][k] + jArg[i][j][k] / rhoArg[i][j][k] * dtArg
+                uNew[i][j][k] = uOldArg[i][j][k] + (jArg[i][j][k] + jOldArg[i][j][k] ) / rho0Arg / 2.0 * dtArg
     return uNew
 
 
-def computeDivergenceUFromDisplacementField(uArg, dxArg):
-    divUOut = np.zeros((len(uArg), len(uArg[0]), len(uArg[0][0])), dtype=np.double)
-    uX = np.zeros((len(uArg), len(uArg[0]), len(uArg[0][0])), dtype=np.double)
-    uY = np.zeros((len(uArg), len(uArg[0]), len(uArg[0][0])), dtype=np.double)
-    uZ = np.zeros((len(uArg), len(uArg[0]), len(uArg[0][0])), dtype=np.double)
-
-
-    for i in range(0, len(uArg)):
-        for j in range(0, len(uArg[0])):
-            for k in range(0, len(uArg[0][0])):
-                uX[i][j][k] = uArg[i][j][k][0]
-                uY[i][j][k] = uArg[i][j][k][1]
-                uZ[i][j][k] = uArg[i][j][k][2]
-
-    gradientUx = np.gradient(uX, dxArg, dxArg, dxArg, edge_order=2)
-    gradientUy = np.gradient(uY, dxArg, dxArg, dxArg, edge_order=2)
-    gradientUz = np.gradient(uZ, dxArg, dxArg, dxArg, edge_order=2)
-
-    for i in range(0, len(uArg)):
-        for j in range(0, len(uArg[0])):
-            for k in range(0, len(uArg[0][0])):
-                divUOut[i][j][k] = gradientUx[0][i][j][k] + gradientUy[1][i][j][k] + gradientUz[2][i][j][k]
-
-    return divUOut
+# def computeDivergenceUFromDisplacementField(uArg, dxArg):
+#     divUOut = np.zeros((len(uArg), len(uArg[0]), len(uArg[0][0])), dtype=np.double)
+#     uX = np.zeros((len(uArg), len(uArg[0]), len(uArg[0][0])), dtype=np.double)
+#     uY = np.zeros((len(uArg), len(uArg[0]), len(uArg[0][0])), dtype=np.double)
+#     uZ = np.zeros((len(uArg), len(uArg[0]), len(uArg[0][0])), dtype=np.double)
+#
+#
+#     for i in range(0, len(uArg)):
+#         for j in range(0, len(uArg[0])):
+#             for k in range(0, len(uArg[0][0])):
+#                 uX[i][j][k] = uArg[i][j][k][0]
+#                 uY[i][j][k] = uArg[i][j][k][1]
+#                 uZ[i][j][k] = uArg[i][j][k][2]
+#
+#     gradientUx = np.gradient(uX, dxArg, dxArg, dxArg, edge_order=2)
+#     gradientUy = np.gradient(uY, dxArg, dxArg, dxArg, edge_order=2)
+#     gradientUz = np.gradient(uZ, dxArg, dxArg, dxArg, edge_order=2)
+#
+#     for i in range(0, len(uArg)):
+#         for j in range(0, len(uArg[0])):
+#             for k in range(0, len(uArg[0][0])):
+#                 divUOut[i][j][k] = gradientUx[0][i][j][k] + gradientUy[1][i][j][k] + gradientUz[2][i][j][k]
+#
+#     return divUOut
 
 def computeDivergenceUFromDensity(rhoArg,rho0Arg):
     divUOut = np.zeros(rhoArg.shape, dtype=np.double)
