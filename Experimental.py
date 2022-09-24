@@ -78,6 +78,7 @@ def sigma(secondMomentArg,dtArg,secondSourceArg):
                 sigmaOut[i,j,k] = secondMomentArg[i,j,k] + dtArg/2.0 * secondSourceArg[i,j,k]
     return sigmaOut
 
+
 def computeU(uOldArg, rho0Arg, jArg, jOldArg, dtArg):
     uNew = np.zeros((len(uOldArg), len(uOldArg[0]), len(uOldArg[0][0]), 3), dtype=np.double)
     for i in range(0, len(uOldArg)):  # f0

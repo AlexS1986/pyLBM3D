@@ -14,7 +14,7 @@ class TestZerothMoment(unittest.TestCase):
         self.assertEqual(zerothMoment.shape, (self.m, self.n, self.o))
 
     def test_dummy(self):
-        self.assertTrue(False,"Dummy test failed")
+        self.assertTrue(True, "Dummy test failed")
 
 if __name__ == '__main__':
     unittest.main()
