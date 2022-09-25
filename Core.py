@@ -96,9 +96,9 @@ def intitialize(rho0Arg, csArg, ccArg, wArg, mArg, nArg, oArg):
     P0 = np.zeros((mArg, nArg, oArg, 3, 3), dtype=np.double)
     j0 = np.zeros((mArg, nArg, oArg, 3), dtype=np.double)
     u0 = np.zeros((mArg, nArg, oArg, 3), dtype=np.double)
-    rho0 = np.zeros((mArg, nArg, oArg), dtype=np.double)
-    rho0.fill(rho0Arg)
-    fOut = equilibriumDistribution(rho0, j0, P0, ccArg, wArg, csArg)
+    rho = np.zeros((mArg, nArg, oArg), dtype=np.double)
+    rho.fill(rho0Arg)
+    fOut = equilibriumDistribution(rho, j0, P0, ccArg, wArg, csArg)
     return [fOut, j0, P0, u0]
 
 
