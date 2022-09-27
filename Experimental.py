@@ -86,7 +86,7 @@ def sigma(secondMomentArg,dtArg,secondSourceArg):
     for i in range(0, len(sigmaOut)):
         for j in range(0, len(sigmaOut[0])):
             for k in range(0, len(sigmaOut[0][0])):
-                sigmaOut[i,j,k] = secondMomentArg[i,j,k] + dtArg/2.0 * secondSourceArg[i,j,k]
+                sigmaOut[i,j,k] = -secondMomentArg[i,j,k] - dtArg/2.0 * secondSourceArg[i,j,k]
     return sigmaOut
 
 
@@ -179,7 +179,7 @@ def computeSigmaBd(sigmaBC, sigmaArg, fArg, ccArg, cArg, uArg, dxArg, laArg, mue
                                 sigmaBd[i,j,l,ii,jj] = sigmaBC[ii,jj]
         return sigmaBd
 
-    def computeSigmaBdWithoutExtrapolation(sigmaArg, ccArg, coordinateArg,coordinateValueArg):
+    def computeSigmaBdWithoutExtrapolation(sigmaArg, ccArg, coordinateArg, coordinateValueArg):
         sigmaAtCoordinate = BC.selectAtCoordinate(sigmaArg,coordinateArg,coordinateValueArg)
         sigmaBd = np.zeros((len(sigmaArg),len(sigmaArg[0]),len(ccArg),3,3), dtype=np.double)
 

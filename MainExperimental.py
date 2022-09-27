@@ -48,6 +48,7 @@ b = np.zeros((maxX,maxY,maxZ,3), dtype=np.double)
 tMax = 2.0
 t = 0.0
 k = int(0)
+
 while(t <= tMax):
     fNew = np.zeros((maxX, maxY, maxZ, 27), dtype=np.double)
     fNew.fill(np.nan)
@@ -55,8 +56,8 @@ while(t <= tMax):
     rho = Core.computeRho(f)
     jOld = j
     j = Ex.j(Core.firstMoment(f, cc), dt, Ex.firstSource(b, rho0))
-    sigma = Ex.sigma(Core.secondMoment(f,cc), dt, Ex.secondSource(Util.computeDivergenceUFromDisplacementField(j, dx), lam, mue, rho0))
-    u = Core.computeU(u, rho, j, jOld, dt, rho0)
+    sigma = Ex.sigma(Core.secondMoment(f, cc), dt, Ex .secondSource(Util.computeDivergenceUFromDisplacementField(j, dx), lam, mue, rho0))
+    u = Ex.computeU(u, rho0, j, jOld, dt)
 
     PostProcessing.writeVTKMaster(k, nameOfSimulation, pathToVTK, t, xx, u)
 
@@ -85,6 +86,7 @@ while(t <= tMax):
                         [np.nan, np.nan, 0],
                         [0.0, 0.0, 0.0]])
     sigmaBCZMax = sigmaBCZMin
+
 
     #edges
     sigmaBCEdgeXY = np.array([[sigmaXX, 0.0, 0.0],
