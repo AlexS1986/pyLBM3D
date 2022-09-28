@@ -161,6 +161,7 @@ def computeDivergenceUFromDensity(rhoArg,rho0Arg):
                 divUOut[i,j,k] = - (rhoArg[i,j,k] - rho0Arg) /rho0Arg
     return divUOut
 
+
 def computeSigma(PArg, divUArg, laArg, mueArg):
     sigmaOut = np.zeros(PArg.shape, dtype=np.double) # TODO how is sigma computed?
     for i in range(0, len(sigmaOut)):

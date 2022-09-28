@@ -280,10 +280,11 @@ def selectAtCorner(arrayArg, coordinateValueArg1=0, coordinateValueArg2=0, coord
 
 
 def getMissingDistributionFunctionIndicesAtEdge(fArg,coordinateArg1='x', coordinateValueArg1=0, coordinateArg2='y', coordinateValueArg2=0):
+
     def checkIfEdge():
-        if coordinateArg1=='x' and coordinateArg2=='y':
+        if coordinateArg1=='x' and coordinateArg2 == 'y':
             return (coordinateValueArg1 == 0 or coordinateValueArg1 == len(fArg) - 1) and (coordinateValueArg2 == 0 or coordinateValueArg2 == len(fArg[0]) -1)
-        elif coordinateArg1=='x' and coordinateArg2=='z':
+        elif coordinateArg1=='x' and coordinateArg2 == 'z':
             return (coordinateValueArg1 == 0 or coordinateValueArg1 == len(fArg) - 1) and (
                         coordinateValueArg2 == 0 or coordinateValueArg2 == len(fArg[0][0]) - 1)
         elif coordinateArg1 == 'y' and coordinateArg2 == 'z':

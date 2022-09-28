@@ -12,17 +12,16 @@ def display(points):
     return True
 
 
-
-def writeVTKMaster(kTime,name,path, time, xxArg, uArg):
+def writeVTKMaster(kTime,name,path, time, xxArg, uArg, sigmaArg):
     points = list()
     for i in range(0, len(xxArg)):
         for j in range(0, len(xxArg[0])):
             for k in range(0, len(xxArg[0][0])):
                 ppData = dict()
                 ppData["u"] = uArg[i,j,k]
-                points.append(Point(xxArg[i,j,k,0], xxArg[i,j,k,1], xxArg[i,j,k,2], ppData))
+                ppData["sigma"] = np.reshape(sigmaArg[i, j, k], 9)
+                points.append(Point(xxArg[i, j, k, 0], xxArg[i, j, k, 1], xxArg[i, j, k, 2], ppData))
     writeVTK(kTime, name, path, points, time)
-
 
 
 def writeVTK(kTime,name,path, points, time):
@@ -66,12 +65,12 @@ def writeVTK(kTime,name,path, points, time):
             for i in range(0, len(point.PPData[key])):
                 tmp_string2 = '{0' + ':18.8e} '
                 value = point.PPData[key][i]
-                if (value is None):
+                if value is None:
                     value = -999
                 tmp_string = tmp_string + tmp_string2.format(value)
         else:
             value = point.PPData[key]
-            if (value is None):
+            if value is None:
                 value = -999
             tmp_string = '{0:18.8e} '.format(value)
         return tmp_string + '\n'
@@ -85,7 +84,7 @@ def writeVTK(kTime,name,path, points, time):
 
         my_file.write(key + ' ' + tmp_len + ' {0:6d} DOUBLE\n'.format(point_number))
         for point in points:
-            my_file.write(write_PPData_2_vtk(point,key))
+            my_file.write(write_PPData_2_vtk(point, key))
         my_file.write('\n')
 
     my_file.close()

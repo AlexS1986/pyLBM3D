@@ -1,6 +1,10 @@
 import numpy as np
 import math
-import copy
+import Settings as SettingsModule
+import Experimental as Ex
+import PostProcessing
+import Core
+import Util
 
 nameOfSimulation = "Block3D"
 pathToVTK = "./vtk/"
@@ -20,12 +24,12 @@ xx = np.zeros((maxX, maxY, maxZ, 3), dtype=np.double)
 for i in range(0, len(xx)):
     for j in range(0,len(xx[0])):
         for k in range(0, len(xx[0][0])):
-            xx[i,j,k] = np.array([np.double(i) * dx, np.double(j) * dx, np.double(k) * dx], dtype=np.double)
+            xx[i, j, k] = np.array([np.double(i) * dx, np.double(j) * dx, np.double(k) * dx], dtype=np.double)
 
 cs = math.sqrt(mue/rho0)
 dt = 1.0 / math.sqrt(3.0) * dx / cs
-c = dx/dt
-tau = 2.0*dt
+c = dx / dt
+tau = 0.808 * dt
 
 #print(np.__version__)
 
@@ -33,37 +37,32 @@ tau = 2.0*dt
 #fNew = np.zeros((m, n, o, 27), dtype = np.double)
 #fEq = np.zeros((m, n, o, 27), dtype = np.double)
 
-import Settings as SettingsModule
+
 [cc, w] = SettingsModule.getLatticeVelocitiesWeights(c)
 
-#import BoundaryConditions
-import Experimental as Ex
-import PostProcessing
-import Core
-import Util
-[f,j,P,u] = Ex.intitialize(rho0, cs, cc, w, maxX, maxY, maxZ, lam, mue)
-b = np.zeros((maxX,maxY,maxZ,3), dtype=np.double)
+
+[f, j, sigma, u] = Ex.intitialize(rho0, cs, cc, w, maxX, maxY, maxZ, lam, mue)
+b = np.zeros((maxX, maxY, maxZ, 3), dtype=np.double)
 
 
 tMax = 2.0
 t = 0.0
 k = int(0)
 
-while(t <= tMax):
+while t <= tMax:
     fNew = np.zeros((maxX, maxY, maxZ, 27), dtype=np.double)
     fNew.fill(np.nan)
 
     rho = Core.computeRho(f)
     jOld = j
     j = Ex.j(Core.firstMoment(f, cc), dt, Ex.firstSource(b, rho0))
-    sigma = Ex.sigma(Core.secondMoment(f, cc), dt, Ex .secondSource(Util.computeDivergenceUFromDisplacementField(j, dx), lam, mue, rho0))
+    sigma = Ex.sigma(Core.secondMoment(f, cc), dt, Ex.secondSource(Util.dJyDy(j, dx), lam, mue, rho0))
     u = Ex.computeU(u, rho0, j, jOld, dt)
 
-    PostProcessing.writeVTKMaster(k, nameOfSimulation, pathToVTK, t, xx, u)
+    PostProcessing.writeVTKMaster(k, nameOfSimulation, pathToVTK, t, xx, u, sigma)
 
-    fEq = Ex.equilibriumDistribution(rho, j, P, cc, w, cs, lam, mue, rho0)
-    psi = Ex.sourceTermPsi(b, rho0, Util.computeDivergenceUFromDisplacementField(j, dx), cc, w, cs, mue, lam)
-
+    fEq = Ex.equilibriumDistribution(rho, j, sigma, cc, w, cs, lam, mue, rho0)
+    psi = Ex.sourceTermPsi(b, rho0, Util.dJyDy(j, dx), cc, w, cs, mue, lam)
 
     fColl = Core.collide(f, fEq, psi, dt, tau)
     #print(fNew)
@@ -125,7 +124,7 @@ while(t <= tMax):
 
 
     # apply BC at z=0
-    fNew = Ex.applyNeumannBoundaryConditions(fNew,fColl,u,rho, rho0, cs,cc,c,w,sigmaBCZMin, sigma, dx,lam,mue,'z',0)
+    fNew = Ex.applyNeumannBoundaryConditions(fNew,fColl,u,rho, rho0, cs, cc, c, w, sigmaBCZMin, sigma, dx,lam,mue,'z',0)
 
     # apply BC at z=max
 
@@ -156,7 +155,7 @@ while(t <= tMax):
                                                                    sigmaBCEdgeXY, sigma, dx, lam, mue, 'x', 0, 'y', 0)
 
     # apply BC at edge x = min, y = max
-    fNew = Ex.applyNeumannBoundaryConditionsAtEdge(fNew,fColl,u,rho,rho0,cs,cc,c,w,sigmaBCEdgeXY,sigmaBCEdgeXY, sigma, dx,lam,mue,'x',0,'y',maxY-1)
+    fNew = Ex.applyNeumannBoundaryConditionsAtEdge(fNew,fColl,u,rho,rho0,cs,cc,c,w,sigmaBCEdgeXY,sigmaBCEdgeXY, sigma, dx, lam, mue, 'x', 0, 'y', maxY-1)
 
     # apply BC at edge x = min, z = min
     fNew = Ex.applyNeumannBoundaryConditionsAtEdge(fNew, fColl, u, rho, rho0, cs, cc, c, w, sigmaBCEdgeXZ,

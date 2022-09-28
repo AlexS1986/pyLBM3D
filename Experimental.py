@@ -24,28 +24,29 @@ def equilibriumDistribution(rhoArg, jArg, sigmaArg, ccArg, wArg, csArg, lamArg, 
                         (-sigmaArg[i][j][k] - rhoArg[i][j][k] * csArg ** 2 * I),
                         (np.outer(ccArg[l], ccArg[l].transpose()) - csArg ** 2 * I),
                         axes=2)
-                    leftTmp3 = np.einsum('a,bc->abc', jArg[i,j,k], I)
+                    leftTmp3 = np.einsum('a,bc->abc', jArg[i, j, k], I)
                     rightTmp3 = np.einsum('a,b,c->abc', ccArg[l], ccArg[l], ccArg[l]) - csArg ** 2 * (
-                        np.einsum('a,bc->abc', ccArg[l], I) +  np.einsum('b,ac->abc', ccArg[l], I) +
+                        np.einsum('a,bc->abc', ccArg[l], I) + np.einsum('b,ac->abc', ccArg[l], I) +
                         np.einsum('c,ab->abc', ccArg[l], I))
 
-                    tmp3 =  (np.einsum('abc,abc',leftTmp3,rightTmp3))
+                    tmp3 = (np.einsum('abc,abc', leftTmp3, rightTmp3))
                     feqOut[i][j][k][l] = wArg[l] * (
                                 rhoArg[i][j][k] + 1.0 / (csArg ** 2) * tmp1 + 1.0 / (2.0 * csArg ** 4) * tmp2 + 1.0 / (
                                     6.0 * csArg ** 6) * (lamArg - mueArg) / rho0Arg * tmp3)
 
     return feqOut
 
-def sourceTermPsi(bArg, rho0Arg, divJArg, ccArg, wArg, csArg, mueArg, laArg):
+
+def sourceTermPsi(bArg, rho0Arg, dJyDy, ccArg, wArg, csArg, mueArg, laArg):
     psiOut = np.zeros((len(bArg), len(bArg[0]), len(bArg[0][0]), 27), dtype=np.double)
     I = np.identity(3, dtype=np.double)
     for i in range(0, len(psiOut)):
         for j in range(0, len(psiOut[0])):
             for k in range(0, len(psiOut[0][0])):
                 for l in range(0, len(psiOut[0][0][0])):
-                    left = divJArg[i,j,k] * I
+                    left = np.array([[dJyDy[0][i, j, k], 0, 0], [0, dJyDy[1][i, j, k], 0], [0, 0, dJyDy[2][i, j, k]]], dtype=float)
                     right = np.outer(ccArg[l], ccArg[l].transpose()) - csArg ** 2 * I
-                    tmp = np.einsum('ab,ab',left,right)
+                    tmp = np.einsum('ab,ab', left, right)
                     #test = wArg[l] * rho0Arg, 1.0 / (csArg ** 2) * np.tensordot(ccArg[l], bArg[i][j][k], axes=1) + 1.0 / (csArg ** 4) * (mueArg - laArg) / rho0Arg * tmp
                     psiOut[i][j][k][l] = wArg[l] * (rho0Arg * 1.0 / (csArg ** 2) * np.tensordot(ccArg[l], bArg[i][j][k], axes=1) + 1.0 / (csArg ** 4) * (mueArg - laArg) / rho0Arg * tmp)
     return psiOut
@@ -58,13 +59,13 @@ def firstSource(bArg,rho0Arg):
                 SOut[i,j,k] = bArg[i,j,k] * rho0Arg
     return SOut
 
-def secondSource(divJArg,laArg,mueArg,rho0Arg):
-    SOut = np.zeros((len(divJArg), len(divJArg[0]), len(divJArg[0][0]), 3, 3), dtype=np.double)
-    I = np.identity(3, dtype=np.double)
+def secondSource(dJyDy,laArg,mueArg,rho0Arg):
+    SOut = np.zeros((len(dJyDy[0]), len(dJyDy[0][0]), len(dJyDy[0][0][0]), 3, 3), dtype=np.double)
+    #I = np.identity(3, dtype=np.double)
     for i in range(0, len(SOut)):
         for j in range(0, len(SOut[0])):
             for k in range(0, len(SOut[0][0])):
-                SOut[i, j, k] = (mueArg - laArg) / rho0Arg * divJArg[i,j,k] * I
+                SOut[i, j, k] = (mueArg - laArg) / rho0Arg * np.array([[dJyDy[0][i,j,k], 0, 0], [0, dJyDy[1][i,j,k], 0], [0, 0, dJyDy[2][i,j,k]]], dtype=float)
     return SOut
 
 

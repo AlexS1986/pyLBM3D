@@ -1,6 +1,11 @@
 import numpy as np
 import math
 import copy
+import Settings as SettingsModule
+import BoundaryConditions
+import PostProcessing
+import Util
+import Core
 
 nameOfSimulation = "Block3D"
 pathToVTK = "./vtk/"
@@ -25,7 +30,7 @@ for i in range(0, len(xx)):
 cs = math.sqrt(mue/rho0)
 dt = 1.0 / math.sqrt(3.0) * dx / cs
 c = dx/dt
-tau = 2.0*dt
+tau = 2.0 * dt
 
 #print(np.__version__)
 
@@ -33,31 +38,27 @@ tau = 2.0*dt
 #fNew = np.zeros((m, n, o, 27), dtype = np.double)
 #fEq = np.zeros((m, n, o, 27), dtype = np.double)
 
-import Settings as SettingsModule
+
 [cc, w] = SettingsModule.getLatticeVelocitiesWeights(c)
-
-import Core
-[f,j,P,u] = Core.intitialize(rho0, cs, cc, w, maxX, maxY, maxZ)
+[f, j, P, u] = Core.intitialize(rho0, cs, cc, w, maxX, maxY, maxZ)
 F = np.zeros((3), dtype=np.double)
-
-import BoundaryConditions
-import PostProcessing
 
 tMax = 2.0
 t = 0.0
 k = int(0)
-while(t <= tMax):
+while t <= tMax:
     fNew = np.zeros((maxX,maxY,maxZ,27), dtype=np.double)
     fNew.fill(np.nan)
 
     rho = Core.computeRho(f)
     S = Core.sourceTerm(dx,rho,rho0,lam,mue,F)
     jOld = j
-    j = Core.computeJ(f,S,cc,dt)
+    j = Core.computeJ(f, S, cc, dt)
     P = Core.computeP(f,cc)
     u = Core.computeU(u, rho, j, jOld, dt,rho0)
 
-    PostProcessing.writeVTKMaster(k,nameOfSimulation,pathToVTK,t,xx,u)
+    sigma = Core.computeSigma(P,Util.computeDivergenceUFromDisplacementField(u,dx),lam,mue)
+    PostProcessing.writeVTKMaster(k,nameOfSimulation,pathToVTK,t,xx,u,sigma)
 
     fEq = Core.equilibriumDistribution(rho, j, P, cc, w, cs)
     psi = Core.sourceTermPsi(S, cc, w, cs)
