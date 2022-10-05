@@ -174,7 +174,15 @@ def computeU(uOldArg, rho0Arg, jArg, jOldArg, dtArg):
 import BoundaryConditions as BC
 
 
-def applyNeumannBoundaryConditions(fArg, fCollArg, rhoArg, csArg, ccArg, wArg, sigmaBdArg, sigmaArg, coordinateArg='x', coordinateValueArg=0):
+def neumannBoundaryRule(sigmaBdArg, rhoBdArg, csArg, ccArg, wArg, fCollRelevantArg):
+    tmp1 = -sigmaBdArg - rhoBdArg * csArg ** 2 * np.identity(3, dtype=np.double)
+    tmp2 = np.outer(ccArg, ccArg.transpose()) - csArg ** 2 * np.identity(3, dtype=np.double)
+    fBouncedBack = - fCollRelevantArg + 2.0 * wArg * (rhoBdArg + 1.0 / (2.0 * csArg ** 4) * (np.tensordot(tmp1, tmp2, axes=2)))
+    return fBouncedBack
+
+
+
+def applyNeumannBoundaryConditions(fArg, fCollArg, rhoArg, csArg, ccArg, wArg, sigmaBdArg, sigmaArg, coordinateArg='x', coordinateValueArg=0, boundaryRule = neumannBoundaryRule):
     '''
     :param fArg: the distribution function before the boundary conditions have been applied at the given plane in lattice dimensions (m,n,o)
     :param fCollArg: the distribution function after collision has been applied in lattice dimensions (m,n,o)
@@ -199,14 +207,15 @@ def applyNeumannBoundaryConditions(fArg, fCollArg, rhoArg, csArg, ccArg, wArg, s
             for l in indicesMissing:
                 oL = BC.getOppositeLatticeDirection(l)
 
-                tmp1 = -sigmaBd[i, j, l] - rhoBd[i, j, l] * csArg ** 2 * np.identity(3, dtype=np.double)
-                tmp2 = np.outer(ccArg[oL], ccArg[oL].transpose()) - csArg ** 2 * np.identity(3, dtype=np.double)
-                fRelevant[i, j, l] = - fCollRelevant[i, j, oL] + 2.0 * wArg[oL] * (rhoBd[i, j, l] + 1.0 / (2.0 * csArg ** 4) * (np.tensordot(tmp1, tmp2, axes=2)))
+                #tmp1 = -sigmaBd[i, j, l] - rhoBd[i, j, l] * csArg ** 2 * np.identity(3, dtype=np.double)
+                #tmp2 = np.outer(ccArg[oL], ccArg[oL].transpose()) - csArg ** 2 * np.identity(3, dtype=np.double)
+                #fRelevant[i, j, l] = - fCollRelevant[i, j, oL] + 2.0 * wArg[oL] * (rhoBd[i, j, l] + 1.0 / (2.0 * csArg ** 4) * (np.tensordot(tmp1, tmp2, axes=2)))
+                fRelevant[i, j, l] = boundaryRule(sigmaBd[i, j, l], rhoBd[i, j, l], csArg, ccArg[oL], wArg[oL], fCollRelevant[i, j, oL])
 
     return fOut
 
 
-def applyNeumannBoundaryConditionsAtEdge(fArg, fCollArg,  rhoArg,  csArg, ccArg,  wArg, sigmaBdArg1, sigmaBdArg2, sigmaArg, coordinateArg1='x', coordinateValueArg1=0, coordinateArg2='y', coordinateValueArg2=0):
+def applyNeumannBoundaryConditionsAtEdge(fArg, fCollArg,  rhoArg,  csArg, ccArg,  wArg, sigmaBdArg1, sigmaBdArg2, sigmaArg, coordinateArg1='x', coordinateValueArg1=0, coordinateArg2='y', coordinateValueArg2=0, boundaryRule=neumannBoundaryRule):
     '''
 
     :param fArg: the distribution function before the boundary conditions have been applied at the given plane in lattice dimensions (m,n,o)
@@ -237,14 +246,15 @@ def applyNeumannBoundaryConditionsAtEdge(fArg, fCollArg,  rhoArg,  csArg, ccArg,
         for l in indicesMissing:
             oL = BC.getOppositeLatticeDirection(l)
 
-            tmp1 = -sigmaBd[i, l] - rhoBd[i, l] * csArg ** 2 * np.identity(3,dtype=np.double)
-            tmp2 = np.outer(ccArg[oL], ccArg[oL].transpose()) - csArg ** 2 * np.identity(3, dtype=np.double)
-            fRelevant[i,l] = - fCollRelevant[i,  oL] + 2.0 * wArg[oL] * (rhoBd[i,l] + 1.0 / (2.0 * csArg ** 4) * (np.tensordot(tmp1,tmp2, axes=2)))
+            #tmp1 = -sigmaBd[i, l] - rhoBd[i, l] * csArg ** 2 * np.identity(3,dtype=np.double)
+            #tmp2 = np.outer(ccArg[oL], ccArg[oL].transpose()) - csArg ** 2 * np.identity(3, dtype=np.double)
+            #fRelevant[i,l] = - fCollRelevant[i,  oL] + 2.0 * wArg[oL] * (rhoBd[i,l] + 1.0 / (2.0 * csArg ** 4) * (np.tensordot(tmp1,tmp2, axes=2)))
 
+            fRelevant[i, l] = boundaryRule(sigmaBd[i,  l], rhoBd[i,  l], csArg, ccArg[oL], wArg[oL], fCollRelevant[i, oL])
     return fOut
 
 
-def applyNeumannBoundaryConditionsAtCorner(fArg, fCollArg, rhoArg,  csArg, ccArg,  wArg, sigmaBdArg1, sigmaBdArg2, sigmaBdArg3, sigmaArg,  coordinateValueArg1=0, coordinateValueArg2=0, coordinateValueArg3=0):
+def applyNeumannBoundaryConditionsAtCorner(fArg, fCollArg, rhoArg,  csArg, ccArg,  wArg, sigmaBdArg1, sigmaBdArg2, sigmaBdArg3, sigmaArg,  coordinateValueArg1=0, coordinateValueArg2=0, coordinateValueArg3=0, boundaryRule=neumannBoundaryRule):
     '''
 
     :param fArg: the distribution function before the boundary conditions have been applied at the given plane in lattice dimensions (m,n,o)
@@ -275,9 +285,10 @@ def applyNeumannBoundaryConditionsAtCorner(fArg, fCollArg, rhoArg,  csArg, ccArg
     for l in indicesMissing:
         oL = BC.getOppositeLatticeDirection(l)
 
-        tmp1 = -sigmaBd[l] - rhoBd[l] * csArg ** 2 * np.identity(3,dtype=np.double)
-        tmp2 = np.outer(ccArg[oL], ccArg[oL].transpose()) - csArg ** 2 * np.identity(3, dtype=np.double)
-        fRelevant[l] = - fCollRelevant[oL] + 2.0 * wArg[oL] * (rhoBd[l] + 1.0 / (2.0 * csArg ** 4) * (np.tensordot(tmp1,tmp2, axes=2)))
+        #tmp1 = -sigmaBd[l] - rhoBd[l] * csArg ** 2 * np.identity(3,dtype=np.double)
+        #tmp2 = np.outer(ccArg[oL], ccArg[oL].transpose()) - csArg ** 2 * np.identity(3, dtype=np.double)
+        #fRelevant[l] = - fCollRelevant[oL] + 2.0 * wArg[oL] * (rhoBd[l] + 1.0 / (2.0 * csArg ** 4) * (np.tensordot(tmp1,tmp2, axes=2)))
+        fRelevant[l] = boundaryRule(sigmaBd[l], rhoBd[l], csArg, ccArg[oL], wArg[oL], fCollRelevant[oL])
 
     return fOut
 
