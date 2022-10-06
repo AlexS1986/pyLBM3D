@@ -180,6 +180,11 @@ def neumannBoundaryRule(sigmaBdArg, rhoBdArg, csArg, ccArg, wArg, fCollRelevantA
     fBouncedBack = - fCollRelevantArg + 2.0 * wArg * (rhoBdArg + 1.0 / (2.0 * csArg ** 4) * (np.tensordot(tmp1, tmp2, axes=2)))
     return fBouncedBack
 
+def bounceBackFsAtPlane(fArg, fCollArg, coordinateArg, coordinateValueArg):
+    fCollRelevant = BC.selectAtCoordinate(fCollArg, coordinateArg, coordinateValueArg)
+    fRelevant = BC.selectAtCoordinate(fArg, coordinateArg, coordinateValueArg)
+    indicesMissing = BC.getMissingDistributionFunctionIndices(fArg, coordinateArg, coordinateValueArg)
+    return [fCollRelevant, fRelevant, indicesMissing]
 
 
 def applyNeumannBoundaryConditions(fArg, fCollArg, rhoArg, csArg, ccArg, wArg, sigmaBdArg, sigmaArg, coordinateArg='x', coordinateValueArg=0, boundaryRule = neumannBoundaryRule):
@@ -196,12 +201,25 @@ def applyNeumannBoundaryConditions(fArg, fCollArg, rhoArg, csArg, ccArg, wArg, s
     :param coordinateValueArg: the index identifying the plane (either 0 or max in the respective direction)
     :return: the distribution function after the boundary conditions have been applied at the given plane in lattice dimensions (m,n,o)
     '''
-    rhoBd = BC.computeRhoBdWithoutExtrapolation(rhoArg, ccArg, coordinateArg, coordinateValueArg)
-    fCollRelevant = BC.selectAtCoordinate(fCollArg, coordinateArg, coordinateValueArg)
+    def computeFieldsForBounceBack(rhoArg, ccArg, coordinateArg, coordinateValueArg):
+        rhoBd = BC.computeRhoBdWithoutExtrapolation(rhoArg, ccArg, coordinateArg, coordinateValueArg)
+        sigmaBd = computeSigmaBd(sigmaBdArg, sigmaArg, ccArg, coordinateArg, coordinateValueArg)
+        return [rhoBd, sigmaBd]
+
+
+
+    #rhoBd = BC.computeRhoBdWithoutExtrapolation(rhoArg, ccArg, coordinateArg, coordinateValueArg)
+    #fCollRelevant = BC.selectAtCoordinate(fCollArg, coordinateArg, coordinateValueArg)
     fOut = copy.deepcopy(fArg)
-    fRelevant = BC.selectAtCoordinate(fOut, coordinateArg, coordinateValueArg)
-    indicesMissing = BC.getMissingDistributionFunctionIndices(fArg, coordinateArg, coordinateValueArg)
-    sigmaBd = computeSigmaBd(sigmaBdArg, sigmaArg, ccArg, coordinateArg='x', coordinateValueArg=0)
+    #fRelevant = BC.selectAtCoordinate(fOut, coordinateArg, coordinateValueArg)
+    #indicesMissing = BC.getMissingDistributionFunctionIndices(fArg, coordinateArg, coordinateValueArg)
+
+    [fCollRelevant, fRelevant, indicesMissing] = bounceBackFsAtPlane(fOut, fCollArg, coordinateArg, coordinateValueArg)
+
+    #sigmaBd = computeSigmaBd(sigmaBdArg, sigmaArg, ccArg, coordinateArg, coordinateValueArg)
+
+    [rhoBd, sigmaBd] = computeFieldsForBounceBack(rhoArg, ccArg, coordinateArg, coordinateValueArg)
+
     for i in range(0, len(fRelevant)):
         for j in range(0, len(fRelevant[0])):
             for l in indicesMissing:
@@ -240,7 +258,7 @@ def applyNeumannBoundaryConditionsAtEdge(fArg, fCollArg,  rhoArg,  csArg, ccArg,
     indicesMissing = BC.getMissingDistributionFunctionIndicesAtEdge(fArg, coordinateArg1,coordinateValueArg1, coordinateArg2, coordinateValueArg2)
 
     sigmaBd = 1.0/2.0 * (sigmaBdArg1 + sigmaBdArg2)
-    sigmaBd = BC.reduceSurfaceToEdge(computeSigmaBd(sigmaBd, sigmaArg, ccArg, coordinateArg='x', coordinateValueArg=0), coordinateArg1,coordinateArg2,coordinateValueArg2)
+    sigmaBd = BC.reduceSurfaceToEdge(computeSigmaBd(sigmaBd, sigmaArg, ccArg, coordinateArg1, coordinateValueArg1), coordinateArg1, coordinateArg2,coordinateValueArg2)
 
     for i in range(0, len(fRelevant)):
         for l in indicesMissing:
@@ -280,7 +298,7 @@ def applyNeumannBoundaryConditionsAtCorner(fArg, fCollArg, rhoArg,  csArg, ccArg
 
     sigmaBd = 1.0/3.0 * (sigmaBdArg1 + sigmaBdArg2 + sigmaBdArg3) # TODO average here okay?
     sigmaBd = BC.reduceSurfaceToCorner(
-        computeSigmaBd(sigmaBd, sigmaArg, ccArg, coordinateArg='x', coordinateValueArg=coordinateValueArg1), coordinateValueArg2, coordinateValueArg3)
+        computeSigmaBd(sigmaBd, sigmaArg, ccArg, 'x', coordinateValueArg1), coordinateValueArg2, coordinateValueArg3)
 
     for l in indicesMissing:
         oL = BC.getOppositeLatticeDirection(l)

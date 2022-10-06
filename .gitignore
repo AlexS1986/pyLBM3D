@@ -1,6 +1,6 @@
 *.h5
 *.xdmf
-vtk/*
+vtk/*.vtk.*
 *.pyc
 .DS_STORE
 .idea/
