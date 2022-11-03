@@ -153,6 +153,37 @@ def getOppositeLatticeDirection(latticeDirection=0): # fits for Krueger conventi
     elif not (latticeDirection % 2 == 0):
         return (latticeDirection + 1)
 
+# def getLatticeDirectionForBounceBack(latticeDirection, ccArg, xMaxIndex, yMaxIndex, zMaxIndex, xIndex, yIndex, zIndex):
+#     if (xIndex not in [xMaxIndex, 0]) and (yIndex not in [yMaxIndex, 0]) and (zIndex not in [zMaxIndex, 0]):
+#         return latticeDirection
+#     else:
+#         cLatticeDirection = ccArg[latticeDirection]
+#         cCorrected = copy.deepcopy(cLatticeDirection)
+#         if xIndex == 0 and cLatticeDirection[0] < 0.0:
+#             cCorrected[0] = 0.0
+#         elif xIndex == xMaxIndex and cLatticeDirection[0] > 0.0:
+#             cCorrected[0] = 0.0
+#
+#         if yIndex == 0 and cLatticeDirection[1] < 0.0:
+#             cCorrected[1] = 0.0
+#         elif yIndex == yMaxIndex and cLatticeDirection[1] > 0.0:
+#             cCorrected[1] = 0.0
+#
+#         if zIndex == 0 and cLatticeDirection[2] < 0.0:
+#             cCorrected[2] = 0.0
+#         elif zIndex == zMaxIndex and cLatticeDirection[2] > 0.0:
+#             cCorrected[2] = 0.0
+#
+#     latticeDirectionForBounceBack = 0
+#     for l in range(0,len(ccArg)):
+#         if (ccArg[l,0] == cCorrected[0]) and (ccArg[l,1] == cCorrected[1]) and (ccArg[l,2] == cCorrected[2]):
+#             latticeDirectionForBounceBack = l
+#             break
+#     #latticeDirectionForBounceBack = np.where(((ccArg[:,0] == cCorrected[0]).all() and (ccArg[:,1] == cCorrected[1]).all() and (ccArg[:,2] == cCorrected[2]).all()).all())
+#     if latticeDirectionForBounceBack == 0:
+#         raise Exception("Corrected direction should not be 0")
+#     return  latticeDirectionForBounceBack
+
 
 def applyDirichletBoundaryConditions(fArg, fCollArg, rhoArg, csArg, ccArg, cArg, wArg, uBdArg, coordinateArg='x', coordinateValueArg=0):  # TODO not defined how edges/corners are handled
     rhoBd = extrapolateScalarToBd(rhoArg, ccArg, cArg, coordinateArg, coordinateValueArg) # needs to be computed for lattice link

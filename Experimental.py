@@ -150,7 +150,7 @@ def sigma(secondMomentArg,dtArg,secondSourceArg):
     for i in range(0, len(sigmaOut)):
         for j in range(0, len(sigmaOut[0])):
             for k in range(0, len(sigmaOut[0][0])):
-                sigmaOut[i,j,k] = -secondMomentArg[i,j,k] - dtArg/2.0 * secondSourceArg[i,j,k]
+                sigmaOut[i, j, k] = -secondMomentArg[i, j, k] - dtArg/2.0 * secondSourceArg[i, j, k]
     return sigmaOut
 
 
@@ -170,9 +170,25 @@ def computeU(uOldArg, rho0Arg, jArg, jOldArg, dtArg):
                 uNew[i][j][k] = uOldArg[i][j][k] + (jArg[i][j][k] + jOldArg[i][j][k]) / rho0Arg / 2.0 * dtArg
     return uNew
 
+def computeJForU(uDesiredArg,uOldArg,dtArg,rho0Arg,jOldArg):
+    '''
+    Solves the integration rule for j if a desired u is given
+    :param uDesiredArg:
+    :param uOldArg:
+    :param dtArg:
+    :param rho0Arg:
+    :param jOldArg:
+    :return:
+    '''
+    j = (uDesiredArg-uOldArg) / dtArg * rho0Arg * 2.0 -jOldArg
+    return j
+
 
 import BoundaryConditions as BC
 
+def dirichletBoundaryRule(jBdArg, csArg, ccArg, wArg, fCollRelevantArg):
+    fBouncedBack = - fCollRelevantArg + 2.0 / (csArg ** 2) * wArg * np.tensordot(ccArg,jBdArg,axes=1)
+    return fBouncedBack
 
 def neumannBoundaryRule(sigmaBdArg, rhoBdArg, csArg, ccArg, wArg, fCollRelevantArg):
     tmp1 = -sigmaBdArg - rhoBdArg * csArg ** 2 * np.identity(3, dtype=np.double)
@@ -224,6 +240,10 @@ def applyNeumannBoundaryConditions(fArg, fCollArg, rhoArg, csArg, ccArg, wArg, s
         for j in range(0, len(fRelevant[0])):
             for l in indicesMissing:
                 oL = BC.getOppositeLatticeDirection(l)
+                #[i1, i2, i3] = getCurrentIndicesInXYZOrder(coordinateArg, coordinateValueArg, i, j)
+                #oL = BC.getOppositeLatticeDirection(
+                #    BC.getLatticeDirectionForBounceBack(l, ccArg, len(rhoArg), len(rhoArg[0]), len(rhoArg[0][0]), i1,
+                #                                        i2, i3))
 
                 #tmp1 = -sigmaBd[i, j, l] - rhoBd[i, j, l] * csArg ** 2 * np.identity(3, dtype=np.double)
                 #tmp2 = np.outer(ccArg[oL], ccArg[oL].transpose()) - csArg ** 2 * np.identity(3, dtype=np.double)
@@ -263,6 +283,11 @@ def applyNeumannBoundaryConditionsAtEdge(fArg, fCollArg,  rhoArg,  csArg, ccArg,
     for i in range(0, len(fRelevant)):
         for l in indicesMissing:
             oL = BC.getOppositeLatticeDirection(l)
+            #[i1, i2, i3] = getCurrentIndicesAtEdgeInXYZOrder(coordinateArg1, coordinateValueArg1, coordinateArg2,
+            #                                                 coordinateValueArg2, i)
+            #oL = BC.getOppositeLatticeDirection(
+            #    BC.getLatticeDirectionForBounceBack(l, ccArg, len(rhoArg), len(rhoArg[0]), len(rhoArg[0][0]), i1, i2,
+            #                                        i3))
 
             #tmp1 = -sigmaBd[i, l] - rhoBd[i, l] * csArg ** 2 * np.identity(3,dtype=np.double)
             #tmp2 = np.outer(ccArg[oL], ccArg[oL].transpose()) - csArg ** 2 * np.identity(3, dtype=np.double)
@@ -302,6 +327,9 @@ def applyNeumannBoundaryConditionsAtCorner(fArg, fCollArg, rhoArg,  csArg, ccArg
 
     for l in indicesMissing:
         oL = BC.getOppositeLatticeDirection(l)
+        #oL = BC.getOppositeLatticeDirection(
+        #    BC.getLatticeDirectionForBounceBack(l, ccArg, len(rhoArg), len(rhoArg[0]), len(rhoArg[0][0]),
+        #                                        coordinateValueArg1, coordinateValueArg2, coordinateValueArg3))
 
         #tmp1 = -sigmaBd[l] - rhoBd[l] * csArg ** 2 * np.identity(3,dtype=np.double)
         #tmp2 = np.outer(ccArg[oL], ccArg[oL].transpose()) - csArg ** 2 * np.identity(3, dtype=np.double)
@@ -358,3 +386,277 @@ def computeSigmaBd(sigmaBC, sigmaArg, ccArg, coordinateArg='x', coordinateValueA
 
     sigmaBd = applyTractionBoundaryConditions(computeSigmaBdWithoutExtrapolation(sigmaArg,ccArg,coordinateArg,coordinateValueArg), sigmaBC)
     return sigmaBd
+
+
+def applyDirichletBoundaryConditions(fArg, fCollArg, rho0Arg, csArg, ccArg, wArg, uBdArg, uOldArg, jOldArg, dtArg, coordinateArg='x', coordinateValueArg=0, boundaryRule = dirichletBoundaryRule):
+    def computeFieldsForBounceBack(rho0Arg, uOldArg, uBdArg, jOldArg, dtArg, ccArg, coordinateArg, coordinateValueArg):
+        uOldBd = BC.selectAtCoordinate(uOldArg,coordinateArg,coordinateValueArg)
+        jOldBd = BC.selectAtCoordinate(jOldArg,coordinateArg,coordinateValueArg)
+        jBd = np.zeros((len(jOldBd), len(jOldBd[0]),len(ccArg),3))
+        for i in range(0,len(jOldBd)):
+            for j in range(0,len(jOldBd[i])):
+                for l in range(0,len(ccArg)):
+                    jBd[i,j,l] = computeJForU(uBdArg, uOldBd[i,j], dtArg, rho0Arg, jOldBd[i,j])
+                    #jBd[i, j, l] = np.array([0.0, 0.0, 0.0])
+        return jBd
+
+    fOut = copy.deepcopy(fArg)
+
+    [fCollRelevant, fRelevant, indicesMissing] = bounceBackFsAtPlane(fOut, fCollArg, coordinateArg, coordinateValueArg)
+
+    jBd = computeFieldsForBounceBack(rho0Arg, uOldArg, uBdArg, jOldArg, dtArg, ccArg, coordinateArg, coordinateValueArg)
+
+    for i in range(0, len(fRelevant)):
+        for j in range(0, len(fRelevant[0])):
+            for l in indicesMissing:
+                oL = BC.getOppositeLatticeDirection(l)
+                fRelevant[i, j, l] = boundaryRule(jBd[i, j, l], csArg, ccArg[oL], wArg[oL], fCollRelevant[i, j, oL])
+
+    return fOut
+
+
+def applyDirichletNeumannBoundaryConditionsAtEdge(fArg, fCollArg,  rhoArg,  csArg, ccArg,  wArg, uBdArg, rho0Arg, uOldArg, jOldArg, dtArg, sigmaBdArg, sigmaArg,  coordinateArg1='x', coordinateValueArg1=0, coordinateArg2='y', coordinateValueArg2=0):
+    def computeFieldsForBounceBack():
+        rhoBd = BC.reduceSurfaceToEdge(
+            BC.computeRhoBdWithoutExtrapolation(rhoArg, ccArg, coordinateArg1, coordinateValueArg1), coordinateArg1,
+            coordinateArg2, coordinateValueArg2)
+        sigmaBd = sigmaBdArg
+        sigmaBd = BC.reduceSurfaceToEdge(computeSigmaBd(sigmaBd, sigmaArg, ccArg, coordinateArg1, coordinateValueArg1),
+                                         coordinateArg1, coordinateArg2, coordinateValueArg2)
+
+        uOldBd = BC.reduceSurfaceToEdge(BC.selectAtCoordinate(uOldArg,coordinateArg1,coordinateValueArg1),coordinateArg1, coordinateArg2, coordinateValueArg2)
+        jOldBd = BC.reduceSurfaceToEdge(BC.selectAtCoordinate(jOldArg,coordinateArg1,coordinateValueArg1),coordinateArg1, coordinateArg2, coordinateValueArg2)
+        jBd = np.zeros((len(jOldBd),len(ccArg),3))
+        for i in range(0,len(jOldBd)):
+            for l in range(0,len(ccArg)):
+                jBd[i,l] = computeJForU(uBdArg, uOldBd[i], dtArg, rho0Arg, jOldBd[i])
+                    #jBd[i, j, l] = np.array([0.0, 0.0, 0.0])
+        return [jBd, rhoBd, sigmaBd]
+
+    def computeFsForBounceBack():
+        fCollRelevant = BC.selectAtEdge(fCollArg, coordinateArg1, coordinateValueArg1, coordinateArg2,
+                                        coordinateValueArg2)
+        fOut = copy.deepcopy(fArg)
+        fRelevant = BC.selectAtEdge(fOut, coordinateArg1, coordinateValueArg1, coordinateArg2, coordinateValueArg2)
+        indicesMissing = BC.getMissingDistributionFunctionIndicesAtEdge(fArg, coordinateArg1, coordinateValueArg1,
+                                                                        coordinateArg2, coordinateValueArg2)
+        return [fCollRelevant, fOut, fRelevant, indicesMissing]
+
+
+    #rhoBd = BC.reduceSurfaceToEdge(BC.computeRhoBdWithoutExtrapolation(rhoArg, ccArg, coordinateArg1, coordinateValueArg1),coordinateArg1,coordinateArg2,coordinateValueArg2)
+    #fCollRelevant = BC.selectAtEdge(fCollArg,coordinateArg1, coordinateValueArg1, coordinateArg2, coordinateValueArg2)
+    #fOut = copy.deepcopy(fArg)
+    #fRelevant = BC.selectAtEdge(fOut, coordinateArg1, coordinateValueArg1, coordinateArg2, coordinateValueArg2)
+    #indicesMissing = BC.getMissingDistributionFunctionIndicesAtEdge(fArg, coordinateArg1,coordinateValueArg1, coordinateArg2, coordinateValueArg2)
+
+    #sigmaBd = sigmaBdArg
+    #sigmaBd = BC.reduceSurfaceToEdge(computeSigmaBd(sigmaBd, sigmaArg, ccArg, coordinateArg1, coordinateValueArg1), coordinateArg1, coordinateArg2,coordinateValueArg2)
+
+    [jBd, rhoBd, sigmaBd] = computeFieldsForBounceBack()
+    [fCollRelevant, fOut, fRelevant, indicesMissing] = computeFsForBounceBack()
+
+    for i in range(0, len(fRelevant)):
+        for l in indicesMissing:
+            oL = BC.getOppositeLatticeDirection(l)
+
+            #tmp1 = -sigmaBd[i, l] - rhoBd[i, l] * csArg ** 2 * np.identity(3,dtype=np.double)
+            #tmp2 = np.outer(ccArg[oL], ccArg[oL].transpose()) - csArg ** 2 * np.identity(3, dtype=np.double)
+            #fRelevant[i,l] = - fCollRelevant[i,  oL] + 2.0 * wArg[oL] * (rhoBd[i,l] + 1.0 / (2.0 * csArg ** 4) * (np.tensordot(tmp1,tmp2, axes=2)))
+            #fRelevant[i, l] = (neumannBoundaryRule(sigmaBd[i,  l], rhoBd[i,  l], csArg, ccArg[oL], wArg[oL], fCollRelevant[i, oL]) + dirichletBoundaryRule(jBd[i, l], csArg, ccArg[oL], wArg[oL], fCollRelevant[i, oL])) / 2.0
+            fRelevant[i, l] = dirichletBoundaryRule(jBd[i, l], csArg,
+                                                    ccArg[oL], wArg[oL],
+                                                    fCollRelevant[
+                                                        i, oL])
+    return fOut
+
+
+def applyDirichletNeumannBoundaryConditionsAtCorner(fArg, fCollArg, rhoArg,  csArg, ccArg,  wArg, uBdArg, rho0Arg, uOldArg, jOldArg, dtArg, sigmaBdArg2, sigmaBdArg3, sigmaArg,  coordinateValueArg1=0, coordinateValueArg2=0, coordinateValueArg3=0):
+    def computeFieldsForBounceBack():
+        rhoBd = BC.reduceSurfaceToCorner(BC.computeRhoBdWithoutExtrapolation(rhoArg, ccArg, 'x', coordinateValueArg1),
+                                         coordinateValueArg2, coordinateValueArg3)
+        sigmaBd2 = BC.reduceSurfaceToCorner(
+        computeSigmaBd(sigmaBdArg2, sigmaArg, ccArg, 'x', coordinateValueArg1), coordinateValueArg2, coordinateValueArg3)
+        sigmaBd3 = BC.reduceSurfaceToCorner(
+            computeSigmaBd(sigmaBdArg3, sigmaArg, ccArg, 'x', coordinateValueArg1), coordinateValueArg2,
+            coordinateValueArg3)
+
+        uOldBd = uOldArg[coordinateValueArg1, coordinateValueArg2, coordinateValueArg3]
+        jOldBd = jOldArg[coordinateValueArg1, coordinateValueArg2, coordinateValueArg3]
+        jBd = np.zeros((len(ccArg), 3))
+        for l in range(0, len(ccArg)):
+                jBd[l] = computeJForU(uBdArg, uOldBd, dtArg, rho0Arg, jOldBd)
+                # jBd[i, j, l] = np.array([0.0, 0.0, 0.0])
+        return [rhoBd, sigmaBd2, sigmaBd3, jBd]
+
+    def computeFsForBounceBack():
+        fCollRelevant = fCollArg[coordinateValueArg1, coordinateValueArg2, coordinateValueArg3]
+        fOut = copy.deepcopy(fArg)
+        fRelevant = fOut[coordinateValueArg1, coordinateValueArg2, coordinateValueArg3]
+        indicesMissing = BC.getMissingDistributionFunctionIndicesAtCorner(fArg, coordinateValueArg1,
+                                                                          coordinateValueArg2, coordinateValueArg3)
+        return [fCollRelevant, fOut, fRelevant, indicesMissing]
+
+
+    #rhoBd = BC.reduceSurfaceToCorner(BC.computeRhoBdWithoutExtrapolation(rhoArg, ccArg, 'x', coordinateValueArg1),coordinateValueArg2, coordinateValueArg3)
+    #fCollRelevant = fCollArg[coordinateValueArg1, coordinateValueArg2, coordinateValueArg3]
+    #fOut = copy.deepcopy(fArg)
+    #fRelevant = fOut[coordinateValueArg1, coordinateValueArg2, coordinateValueArg3]
+    #indicesMissing = BC.getMissingDistributionFunctionIndicesAtCorner(fArg, coordinateValueArg1, coordinateValueArg2, coordinateValueArg3)
+
+    [rhoBd, sigmaBd2, sigmaBd3, jBd] = computeFieldsForBounceBack()
+
+    [fCollRelevant, fOut, fRelevant, indicesMissing] = computeFsForBounceBack()
+
+    #sigmaBd = 1.0/3.0 * (sigmaBdArg1 + sigmaBdArg2 + sigmaBdArg3) # TODO average here okay?
+    #sigmaBd = BC.reduceSurfaceToCorner(
+    #    computeSigmaBd(sigmaBd, sigmaArg, ccArg, 'x', coordinateValueArg1), coordinateValueArg2, coordinateValueArg3)
+
+    for l in indicesMissing:
+        oL = BC.getOppositeLatticeDirection(l)
+
+        #tmp1 = -sigmaBd[l] - rhoBd[l] * csArg ** 2 * np.identity(3,dtype=np.double)
+        #tmp2 = np.outer(ccArg[oL], ccArg[oL].transpose()) - csArg ** 2 * np.identity(3, dtype=np.double)
+        #fRelevant[l] = - fCollRelevant[oL] + 2.0 * wArg[oL] * (rhoBd[l] + 1.0 / (2.0 * csArg ** 4) * (np.tensordot(tmp1,tmp2, axes=2)))
+        #fRelevant[l] = (neumannBoundaryRule(sigmaBd2[l], rhoBd[l], csArg, ccArg[oL], wArg[oL], fCollRelevant[oL]) + neumannBoundaryRule(sigmaBd3[l], rhoBd[l], csArg, ccArg[oL], wArg[oL], fCollRelevant[oL]) + dirichletBoundaryRule(jBd[ l], csArg, ccArg[oL], wArg[oL], fCollRelevant[ oL])) / 3.0
+        fRelevant[l] = dirichletBoundaryRule(
+            jBd[l], csArg, ccArg[oL], wArg[oL], fCollRelevant[oL])
+    return fOut
+
+
+def getCurrentIndicesInXYZOrder( coordinateArg, coordinateValueArg,  index1, index2):
+    if(coordinateArg == 'x'):
+        return [coordinateValueArg, index1, index2]
+    elif (coordinateArg == 'y'):
+        return [index1, coordinateValueArg, index2]
+    elif (coordinateArg == 'z'):
+        return [index1, index2, coordinateValueArg]
+    else:
+        raise Exception("Invalid input")
+
+
+def applyDirichletBoundaryConditions(fArg, fCollArg, rhoArg, csArg, ccArg, cArg, wArg, jBdArg,
+                                     coordinateArg='x', coordinateValueArg=0):
+    # print(rhoArg)
+    rhoBd = BC.extrapolateScalarToBd(rhoArg, ccArg, cArg, coordinateArg, coordinateValueArg)
+    # dotu = np.zeros(uOldArg.shape, dtype=np.double)
+    # for i in range(0, len(uOldArg)):
+    #     for j in range(0, len(uOldArg[0])):
+    #         for k in range(0, len(uOldArg[0][0])):
+    #             dotu[i, j, k] = (uBdArg - uOldArg[i, j, k]) / dtArg
+    # dotuRelevant = BC.selectAtCoordinate(dotu, coordinateArg, coordinateValueArg)
+    # print(dotuRelevant)
+    # print(rhoBd)
+    jBd = np.zeros((len(rhoBd), len(rhoBd[0]), 27, 3), dtype=np.double)  # len(rhoArg[0][0])
+    # print(jBd)
+    for i in range(0, len(jBd)):
+        for j in range(0, len(jBd[0])):
+            # for k in range(0, len(uBdArg[0][0])):
+            # uBd = uBdArg[i,j,k]
+            for l in range(0, 27):
+                # jBd = dotu * rhoBd
+                #jBd[i, j, l] = dotuRelevant[i, j] * rhoBd[i, j, l]
+                jBd[i, j, l] = jBdArg
+
+    fCollRelevant = BC.selectAtCoordinate(fCollArg, coordinateArg, coordinateValueArg)
+    fOut = copy.deepcopy(fArg)
+    fRelevant = BC.selectAtCoordinate(fOut, coordinateArg, coordinateValueArg)
+    indicesMissing = BC.getMissingDistributionFunctionIndices(fArg, coordinateArg, coordinateValueArg)
+    for i in range(0, len(fRelevant)):
+        for j in range(0, len(fRelevant[0])):
+            for l in indicesMissing:
+                #[i1, i2, i3] = getCurrentIndicesInXYZOrder(coordinateArg, coordinateValueArg, i, j)
+                #oL = BC.getOppositeLatticeDirection(
+                #    BC.getLatticeDirectionForBounceBack(l, ccArg, len(rhoArg), len(rhoArg[0]), len(rhoArg[0][0]), i1,
+                #                                        i2, i3))
+                oL = BC.getOppositeLatticeDirection(l)
+                fRelevant[i, j, l] = fCollRelevant[i, j, oL] - 2.0 / csArg ** 2 * wArg[oL] * np.tensordot(ccArg[oL],
+                                                                                                          jBd[i, j, l],
+                                                                                                          axes=1)
+
+    return fOut
+
+
+def getCurrentIndicesAtEdgeInXYZOrder( coordinateArg1, coordinateValueArg1, coordinateArg2,
+                                           coordinateValueArg2, index):
+    if(coordinateArg1 == 'x' and coordinateArg2 == 'y'):
+        return [coordinateValueArg1, coordinateValueArg2, index]
+    elif (coordinateArg1 == 'x' and coordinateArg2 == 'z'):
+        return [coordinateValueArg1, index, coordinateValueArg2 ]
+    elif (coordinateArg1 == 'y' and coordinateArg2 == 'z'):
+        return [ index, coordinateValueArg1, coordinateValueArg2]
+    else:
+        raise Exception("Invalid input")
+
+def applyDirichletBoundaryConditionsAtEdge(fArg, fCollArg, rhoArg, csArg, ccArg, cArg, wArg, jBdArg,
+                                           coordinateArg1='x', coordinateValueArg1=0, coordinateArg2='y',
+                                           coordinateValueArg2=0):
+    rhoBd = BC.reduceSurfaceToEdge(BC.extrapolateScalarToBd(rhoArg, ccArg, cArg, coordinateArg1, coordinateValueArg1),
+                                   coordinateArg1, coordinateArg2, coordinateValueArg2)
+    # print(rhoBd.shape)
+    # 2D?
+    # dotu = np.zeros(uOldArg.shape, dtype=np.double)
+    # for i in range(0, len(uOldArg)):
+    #     for j in range(0, len(uOldArg[0])):
+    #         for k in range(0, len(uOldArg[0][0])):
+    #             dotu[i, j, k] = (uBdArg - uOldArg[i, j, k]) / dtArg
+    #
+    # dotuRelevant = BC.selectAtEdge(dotu, coordinateArg1, coordinateValueArg1, coordinateArg2, coordinateValueArg2)
+    # # print(dotuRelevant)
+    # # 2D?
+    jBd = np.zeros((len(rhoBd), 27, 3), dtype=np.double)  # len(rhoArg[0][0])
+    for i in range(0, len(jBd)):
+        for l in range(0, 27):
+            #jBd[i, l] = dotuRelevant[i] * rhoBd[i, l]
+            jBd[i, l] = jBdArg
+
+    fCollRelevant = BC.selectAtEdge(fCollArg, coordinateArg1, coordinateValueArg1, coordinateArg2, coordinateValueArg2)
+    fOut = copy.deepcopy(fArg)
+    fRelevant = BC.selectAtEdge(fOut, coordinateArg1, coordinateValueArg1, coordinateArg2, coordinateValueArg2)
+    indicesMissing = BC.getMissingDistributionFunctionIndicesAtEdge(fArg, coordinateArg1,coordinateValueArg1, coordinateArg2, coordinateValueArg2) ###Alte Version
+    #indicesMissing = getMissingDistributionFunctionIndicesAtEdgeDirichlet(fArg, ccArg, cArg, coordinateArg1,
+    #                                                                      coordinateValueArg1, coordinateArg2,
+    #coordinateValueArg2)
+    for i in range(0, len(fRelevant)):
+        for l in indicesMissing:
+            oL = BC.getOppositeLatticeDirection(l)
+            #[i1, i2, i3] = getCurrentIndicesAtEdgeInXYZOrder(coordinateArg1, coordinateValueArg1, coordinateArg2,
+            #                                coordinateValueArg2, i)
+            #oL = BC.getOppositeLatticeDirection(
+            #     BC.getLatticeDirectionForBounceBack(l, ccArg, len(rhoArg), len(rhoArg[0]), len(rhoArg[0][0]),i1,i2,i3))
+            fRelevant[i, l] = fCollRelevant[i, oL] - 2.0 / csArg ** 2 * wArg[oL] * np.tensordot(ccArg[oL], jBd[i, l],
+                                                                                                axes=1)
+
+    return fOut
+
+
+def applyDirichletBoundaryConditionsAtCorner(fArg, fCollArg, rhoArg, csArg, ccArg,  wArg, jBdArg,
+                                              coordinateValueArg1=0,
+                                             coordinateValueArg2=0, coordinateValueArg3=0):
+    #rhoBd = BC.reduceSurfaceToCorner(BC.computeRhoBdWithoutExtrapolation(rhoArg, ccArg, 'x', coordinateValueArg1),
+    #                                 coordinateValueArg2, coordinateValueArg3)
+    # print(rhoBd)
+    # dotu = np.zeros(uOldArg.shape, dtype=np.double)
+    # for i in range(0, len(uOldArg)):
+    #     for j in range(0, len(uOldArg[0])):
+    #         for k in range(0, len(uOldArg[0][0])):
+    #             dotu[i, j, k] = (uBdArg - uOldArg[i, j, k]) / dtArg
+
+    #dotuRelevant = dotu[coordinateValueArg1, coordinateValueArg2, coordinateValueArg3]
+    # print(dotuRelevant)
+    jBd = np.zeros((27, 3), dtype=np.double)  # len(rhoArg[0][0])
+    for l in range(0, 27):
+        #jBd[l] = dotuRelevant * rhoBd[l]
+        jBd[l] = jBdArg
+
+    fCollRelevant = fCollArg[coordinateValueArg1, coordinateValueArg2, coordinateValueArg3]
+    fOut = copy.deepcopy(fArg)
+    fRelevant = fOut[coordinateValueArg1, coordinateValueArg2, coordinateValueArg3]
+    indicesMissing = BC.getMissingDistributionFunctionIndicesAtCorner(fArg, coordinateValueArg1, coordinateValueArg2, coordinateValueArg3) ###Alte Version
+    #indicesMissing = getMissingDistributionFunctionIndicesAtCornerDirichlet(fArg, ccArg, cArg, coordinateValueArg1,
+    #                                                                        coordinateValueArg2, coordinateValueArg3)
+    for l in indicesMissing:
+        oL = BC.getOppositeLatticeDirection(l)
+        #oL = BC.getOppositeLatticeDirection(BC.getLatticeDirectionForBounceBack(l, ccArg, len(rhoArg), len(rhoArg[0]), len(rhoArg[0][0]), coordinateValueArg1, coordinateValueArg2, coordinateValueArg3))
+        fRelevant[l] = fCollRelevant[oL] - 2.0 / csArg ** 2 * wArg[oL] * np.tensordot(ccArg[oL], jBd[l], axes=1)
+
+    return fOut
