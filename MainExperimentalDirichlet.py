@@ -16,10 +16,11 @@ rho0 = 1.0
 P0 = np.zeros((3, 3))
 j0 = np.zeros(3)
 
-maxX = 10
+ax = 1.0
+maxX = 20
 maxY = maxX
 maxZ = maxX
-dx = 0.1  # spacing
+dx = ax/maxX  # spacing
 xx = np.zeros((maxX, maxY, maxZ, 3), dtype=np.double)
 for i in range(0, len(xx)):
     for j in range(0,len(xx[0])):
@@ -75,9 +76,12 @@ while t <= tMax:
     sigmaBCXMax = np.array([[sigmaXX, 0.0, 0.0],
                             [0.0, np.nan, np.nan],
                             [0.0, np.nan, np.nan]])
-    sigmaBCXMin = np.array([[np.nan, 0.0, 0.0],
-                            [0.0, np.nan, np.nan],
-                            [0.0, np.nan, np.nan]])
+    #sigmaBCXMin = np.array([[np.nan, 0.0, 0.0],
+    #                        [0.0, np.nan, np.nan],
+    #                        [0.0, np.nan, np.nan]])
+    sigmaBCXMin = np.array([[np.nan, np.nan, np.nan],
+                            [np.nan, np.nan, np.nan],
+                            [np.nan, np.nan, np.nan]])
 
     sigmaBCYMin = np.array([[np.nan, 0, np.nan],
                         [0, 0, 0],

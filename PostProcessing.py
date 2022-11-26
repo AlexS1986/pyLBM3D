@@ -99,3 +99,15 @@ class Point(object):
         self.PPData = PPData
 
 
+import os
+def writeToFile(file,filePath,uOut,t):
+    if file is None: # first time step
+        if os.path.exists(filePath):
+            os.remove(filePath)
+    file = open(filePath, "a")
+    line = '{0:16.8e}'.format(t)
+    for point in uOut:
+        line = line + ' {0:16.8e} {1:16.8e} {2:16.8e}'.format(point[0], point[1], point[2])
+    line = line + "\n"
+    file.write(line)
+    return file

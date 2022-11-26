@@ -5,6 +5,7 @@ import Experimental as Ex
 import PostProcessing
 import Core
 import Util
+import os
 
 nameOfSimulation = "Block3D"
 pathToVTK = "./vtk/"
@@ -16,10 +17,11 @@ rho0 = 1.0
 P0 = np.zeros((3, 3))
 j0 = np.zeros(3)
 
-maxX = 10
+ax = 1.0
+maxX = 20
 maxY = maxX
 maxZ = maxX
-dx = 0.1  # spacing
+dx = ax/maxX  # spacing
 xx = np.zeros((maxX, maxY, maxZ, 3), dtype=np.double)
 for i in range(0, len(xx)):
     for j in range(0,len(xx[0])):
@@ -49,6 +51,11 @@ tMax = 2.0
 t = 0.0
 k = int(0)
 
+
+
+outputFile = None
+pointIndices = [[maxX-1, maxY-1, maxZ-1], [maxX-1, 15, 15], [10,10,10]]
+
 while t <= tMax:
     fNew = np.zeros((maxX, maxY, maxZ, 27), dtype=np.double)
     fNew.fill(np.nan)
@@ -60,6 +67,12 @@ while t <= tMax:
     u = Ex.computeU(u, rho0, j, jOld, dt)
 
     PostProcessing.writeVTKMaster(k, nameOfSimulation, pathToVTK, t, xx, u, sigma)
+
+    uOut = []
+    for indices in pointIndices:
+        uOut.append(u[indices[0], indices[1], indices[2]])
+
+    outputFile = PostProcessing.writeToFile(outputFile,"./Neumann.dis",uOut,t)
 
     fEq = Ex.equilibriumDistribution(rho, j, sigma, cc, w, cs, lam, mue, rho0)
     psi = Ex.sourceTermPsi(b, rho0, Util.dJyDy(j, dx), cc, w, cs, mue, lam)
@@ -274,6 +287,7 @@ while t <= tMax:
     print(k)
     t = t + dt
 
-
+if outputFile is not None:
+    outputFile.close()
 print("End")
 
