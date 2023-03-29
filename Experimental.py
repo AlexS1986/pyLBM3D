@@ -40,6 +40,10 @@ def equilibriumDistribution(rhoArg, jArg, sigmaArg, ccArg, wArg, csArg, lamArg, 
     '''
     feqOut = np.zeros((len(rhoArg), len(rhoArg[0]), len(rhoArg[0][0]), 27), dtype=np.double)
     I = np.identity(3, dtype=np.double)
+    II = np.zeros((3, 3, 3), dtype=np.double)
+    II[0, 0, 0] = 1.0
+    II[1, 1, 1] = 1.0
+    II[2, 2, 2] = 1.0
     for i in range(0, len(feqOut)):
         for j in range(0, len(feqOut[0])):
             for k in range(0, len(feqOut[0][0])):
@@ -49,7 +53,9 @@ def equilibriumDistribution(rhoArg, jArg, sigmaArg, ccArg, wArg, csArg, lamArg, 
                         (-sigmaArg[i][j][k] - rhoArg[i][j][k] * csArg ** 2 * I),
                         (np.outer(ccArg[l], ccArg[l].transpose()) - csArg ** 2 * I),
                         axes=2)
-                    leftTmp3 = np.einsum('a,bc->abc', jArg[i, j, k], I)
+
+                    leftTmp3 = np.einsum('a,bc->abc', jArg[i, j, k], I) + np.einsum('c,abc->abc', jArg[i, j, k], II)
+
                     rightTmp3 = np.einsum('a,b,c->abc', ccArg[l], ccArg[l], ccArg[l]) - csArg ** 2 * (
                         np.einsum('a,bc->abc', ccArg[l], I) + np.einsum('b,ac->abc', ccArg[l], I) +
                         np.einsum('c,ab->abc', ccArg[l], I))
