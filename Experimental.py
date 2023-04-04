@@ -54,7 +54,7 @@ def equilibriumDistribution(rhoArg, jArg, sigmaArg, ccArg, wArg, csArg, lamArg, 
                         (np.outer(ccArg[l], ccArg[l].transpose()) - csArg ** 2 * I),
                         axes=2)
 
-                    leftTmp3 = np.einsum('a,bc->abc', jArg[i, j, k], I) + np.einsum('c,abc->abc', jArg[i, j, k], II)
+                    leftTmp3 = np.einsum('a,bc->abc', jArg[i, j, k], I) - np.einsum('c,abc->abc', jArg[i, j, k], II)
 
                     rightTmp3 = np.einsum('a,b,c->abc', ccArg[l], ccArg[l], ccArg[l]) - csArg ** 2 * (
                         np.einsum('a,bc->abc', ccArg[l], I) + np.einsum('b,ac->abc', ccArg[l], I) +
@@ -156,7 +156,7 @@ def sigma(secondMomentArg,dtArg,secondSourceArg):
     for i in range(0, len(sigmaOut)):
         for j in range(0, len(sigmaOut[0])):
             for k in range(0, len(sigmaOut[0][0])):
-                sigmaOut[i, j, k] = -secondMomentArg[i, j, k] - dtArg/2.0 * secondSourceArg[i, j, k]
+                sigmaOut[i, j, k] = -secondMomentArg[i, j, k] + dtArg/2.0 * secondSourceArg[i, j, k]
     return sigmaOut
 
 
