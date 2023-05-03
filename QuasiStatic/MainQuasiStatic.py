@@ -11,7 +11,7 @@ import QuasiStatic.QuasiStatic as QS
 import QuasiStatic.QuasiStaticBC as QSBC
 
 nameOfSimulation = "Block3D"
-pathToVTK = "./vtk/"
+pathToVTK = "../vtk/"
 
 lam = 1.0
 mue = 1.0
@@ -39,8 +39,8 @@ tau = 0.55 * dt
 
 [cc, w] = SettingsModule.getLatticeVelocitiesWeights(c)
 
-[f, j, sigma, u] = Ex.intitialize(rho0, cs, cc, w, maxX, maxY, maxZ, lam, mue)
-b = np.zeros((maxX, maxY, maxZ, 3), dtype=np.double)
+[f, j, sigma, u] = QS.intitialize(rho0, w, maxX, maxY, maxZ, lam, mue)
+b = np.zeros((maxX, maxY, maxZ, 3), dtype=np.double) # TODO not needed
 
 
 tMax = 2.0
@@ -57,26 +57,36 @@ while t <= tMax:
     fNew.fill(np.nan)
 
     rho = Core.computeRho(f)
+    gradU = Util.computeGradientU(u,dx)
+    sigma = QS.sigmaFromDisplacement(gradU,lam,mue)
+    divSigma = QS.divOfSigma(sigma,dx)
+    
     jOld = j
-    j = Ex.j(Core.firstMoment(f, cc), dt, Ex.firstSource(b, rho0))
-    sigma = Ex.sigma(Core.secondMoment(f, cc), dt, Ex.secondSource(Util.dJyDy(j, dx), lam, mue, rho0))
+    g = QS.g(rho, divSigma)
+    j = Ex.j(Core.firstMoment(f, cc), dt, g)
+
+    # sigma = Ex.sigma(Core.secondMoment(f, cc), dt, Ex.secondSource(Util.dJyDy(j, dx), lam, mue, rho0))
     u = Ex.computeU(u, rho0, j, jOld, dt)
 
     PostProcessing.writeVTKMaster(k, nameOfSimulation, pathToVTK, t, xx, u, sigma)
 
+    # Postprocessing
     uOut = []
     for indices in pointIndices:
         uOut.append(u[indices[0], indices[1], indices[2]])
 
     outputFile = PostProcessing.writeToFile(outputFile,"./Neumann.dis",uOut,t)
 
-    fEq = Ex.equilibriumDistribution(rho, j, sigma, cc, w, cs, lam, mue, rho0)
+    fEq = QS.equilibriumDistribution(rho,w)
     psi = Ex.sourceTermPsi(b, rho0, Util.dJyDy(j, dx), cc, w, cs, mue, lam)
 
-    fColl = Core.collide(f, fEq, psi, dt, tau)
-    #print(fNew)
+    v = QS.v(rho,j)
+    gi = QS.gi(g,cc,w,rho,cs,v)
+
+    fColl = QS.collide(f,fEq,gi,dt,1.0/tau)
     fNew = Core.stream(fColl, cc, c)
-    #print(fNew)
+
+    # TODO
 
     sigmaXX = 0.001
 
