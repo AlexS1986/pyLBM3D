@@ -19,14 +19,14 @@ def intitialize(rho0Arg,  wArg, mArg, nArg, oArg):
     return [fOut, j0, sigma0, u0]
 
 def gi(gArg, ccArg, wArg, rhoArg, csArg, vArg):
-    gi = np.zeros((len(gArg), len(gArg[0]), len(gArg[0][0], len(ccArg))), dtype=np.double)
+    gi = np.zeros((len(gArg), len(gArg[0]), len(gArg[0][0]), len(ccArg)), dtype=np.double)
     for i in range(0, len(gArg)):
         for j in range(0, len(gArg[0])):
             for k in range(0, len(gArg[0][0])):
                 for l in range(0,len(ccArg)):
                     bracket = np.einsum('a,a',ccArg[l],vArg[i,j,k]) * ccArg[l] - 1.0 / csArg ** 2 * vArg[i,j,k]
-                    gi[i,j,k,l] = wArg[i,j,k,l] * rhoArg[i,j,k] / csArg ** 2 * np.einsum('a,a',ccArg[l],gArg[i,j,k]) 
-                    + wArg[i,j,k,l] * rhoArg[i,j,k] / 2.0 / ( csArg ** 4) * np.einsum('a,a',bracket, gArg[i,j,k])
+                    gi[i,j,k,l] = wArg[l] * rhoArg[i,j,k] / csArg ** 2 * np.einsum('a,a',ccArg[l],gArg[i,j,k]) 
+                    + wArg[l] * rhoArg[i,j,k] / 2.0 / ( csArg ** 4) * np.einsum('a,a',bracket, gArg[i,j,k])
     return gi               
     
 
@@ -43,7 +43,7 @@ def firstSource(rhoArg, divSigmaArg):
 
 
 def divOfSigma(sigmaArg, dxArg):
-    divOfSigma = np.zeros((len(sigmaArg), len(sigmaArg[0]), len(sigmaArg[0][0], 3)), dtype=np.double)
+    divOfSigma = np.zeros((len(sigmaArg), len(sigmaArg[0]), len(sigmaArg[0][0]),3), dtype=np.double)
 
     S11 = np.zeros((len(sigmaArg), len(sigmaArg[0]), len(sigmaArg[0][0])), dtype=np.double)
     S12 = np.zeros((len(sigmaArg), len(sigmaArg[0]), len(sigmaArg[0][0])), dtype=np.double)
@@ -99,6 +99,8 @@ def collide(fArg, feqArg, giArg, dtArg, omegaArg):
 
 
 
+
+
 def equilibriumDistribution(rhoArg,  wArg):
     feqOut = np.zeros((len(rhoArg), len(rhoArg[0]), len(rhoArg[0][0]), 27), dtype=np.double)
     for i in range(0, len(feqOut)):
@@ -134,3 +136,10 @@ def v(rhoArg, jArg):
             for k in range(0, len(rhoArg[0][0])):
                 vOut[i,j,k] = 1.0 / rhoArg[i,j,k] * jArg[i,j,k]
     return vOut
+
+
+
+
+
+
+    

@@ -86,3 +86,11 @@ def dJyDy(jArg, dxArg):
                 j3d3[i][j][k] = gradientUx[0][i][j][k] + gradientUy[1][i][j][k] + gradientUz[2][i][j][k]
 
     return [j1d1, j2d2, j3d3]
+
+def trace(eps):
+    trEps = np.zeros((len(eps), len(eps[0]), len(eps[0][0])), dtype=np.double)
+    for i in range(0, len(eps)):
+        for j in range(0, len(eps[0])):
+            for k in range(0, len(eps[0][0])):
+                trEps[i,j,k] = eps[i,j,k,0,0] +  eps[i,j,k,1,1] + eps[i,j,k,2,2]
+    return trEps
