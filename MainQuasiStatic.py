@@ -33,7 +33,11 @@ for i in range(0, len(xx)):
 cs = math.sqrt(mue/rho0)
 dt = 1.0 / math.sqrt(3.0) * dx / cs
 c = dx / dt
-tau = 0.55 * dt
+
+nu = lam / (2.0 * (lam + mue))
+omega = 2.0 * cs ** 2 / ( cs ** 2 + 2 * nu) # TODO do you use this for solids als well (page 4)
+tau = 1.0 / omega
+#tau = 0.55 * dt
 
 
 [cc, w] = SettingsModule.getLatticeVelocitiesWeights(c)
@@ -58,7 +62,7 @@ while t <= tMax:
     # BC ####################################
     def uBdFromCoordinates(coordinates):
         c = 0.001
-        nu = lam / (2.0 * (lam * mue))
+        nu = lam / (2.0 * (lam + mue))
         return np.array([ c * coordinates[0], - nu * c * coordinates[1], - nu * c * coordinates[2] ])
 
     #xmin

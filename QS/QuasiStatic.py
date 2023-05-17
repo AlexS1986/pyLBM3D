@@ -25,7 +25,7 @@ def gi(gArg, ccArg, wArg, rhoArg, csArg, vArg):
             for k in range(0, len(gArg[0][0])):
                 for l in range(0,len(ccArg)):
                     bracket = np.einsum('a,a',ccArg[l],vArg[i,j,k]) * ccArg[l] - 1.0 / csArg ** 2 * vArg[i,j,k]
-                    gi[i,j,k,l] = wArg[l] * rhoArg[i,j,k] / csArg ** 2 * np.einsum('a,a',ccArg[l],gArg[i,j,k]) 
+                    gi[i,j,k,l] = wArg[l] * rhoArg[i,j,k] / csArg ** 2 * np.einsum('a,a',ccArg[l],gArg[i,j,k]) # page 4
                     + wArg[l] * rhoArg[i,j,k] / 2.0 / ( csArg ** 4) * np.einsum('a,a',bracket, gArg[i,j,k])
     return gi               
     
@@ -94,7 +94,7 @@ def divOfSigma(sigmaArg, dxArg):
 
 
 def collide(fArg, feqArg, giArg, dtArg, omegaArg):
-    fCollOut = fArg - dtArg*omegaArg * (fArg - feqArg) - (1.0 - omegaArg / 2.0) * dtArg * giArg
+    fCollOut = fArg - dtArg*omegaArg * (fArg - feqArg) - dtArg * (1.0 - omegaArg / 2.0) * giArg
     return fCollOut
 
 
