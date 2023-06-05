@@ -54,7 +54,7 @@ def applyDirichletBoundaryConditions(fArg, dxArg, dtArg, rho0Arg, wArg,   uArg, 
         for j in range(0, len(uAtBC[0])):
             uAtBC[i,j] = uBdFromCoordinatesFunction(computeCoordinatesFromIndices(dxArg,coordinateArg,coordinateValueArg,i,j))
 
-    # compute new density at boundary lattice points
+    # compute new density at boundary lattice points # TODO done differently, maybe leave
     rho = densityFromDisplacementField(uOut,dxArg,rho0Arg)
 
     # compute equilibrium distribution at lattice points
@@ -66,7 +66,7 @@ def applyDirichletBoundaryConditions(fArg, dxArg, dtArg, rho0Arg, wArg,   uArg, 
     fEqAtBC = BC.selectAtCoordinate(fEq, coordinateArg, coordinateValueArg)
     for i in range(0, len(fAtBC)):
         for j in range(0, len(fAtBC[0])):
-            # Collide without source -> double collision
+            # Collide without source -> double collision , TODO is applied twice at edges
             fAtBC[i,j] = fAtBC[i,j] - dtArg * omegaBCArg * (fAtBC[i,j] - fEqAtBC[i,j])
 
     return [fOut, uOut]

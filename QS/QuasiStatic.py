@@ -99,8 +99,6 @@ def collide(fArg, feqArg, giArg, dtArg, omegaArg):
 
 
 
-
-
 def equilibriumDistribution(rhoArg,  wArg):
     feqOut = np.zeros((len(rhoArg), len(rhoArg[0]), len(rhoArg[0][0]), 27), dtype=np.double)
     for i in range(0, len(feqOut)):
@@ -125,7 +123,7 @@ def sigmaFromDisplacement(gradUArg,laArg,mueArg):
     for i in range(0, len(sigmaOut)):
         for j in range(0, len(sigmaOut[0])):
             for k in range(0, len(sigmaOut[0][0])):
-                sigmaOut[i,j,k] = laArg * I * eps[i,j,k].trace() + 2.0 * mueArg * eps[i,j,k]
+                sigmaOut[i,j,k] = laArg * I * eps[i,j,k].trace() + 2.0 * mueArg * eps[i,j,k] # TODO dimension
     return sigmaOut
 
     
@@ -155,6 +153,8 @@ def computeU(uOldArg, rho0Arg, jArg, jOldArg, dtArg):
                     uNew[i][j][k] = uOldArg[i][j][k]
                 else:
                     uNew[i][j][k] = uOldArg[i][j][k] + (jArg[i][j][k] + jOldArg[i][j][k]) / rho0Arg / 2.0 * dtArg
+                    # TODO jArg and rho
+                    # TODO use v instead of jOld
     return uNew
 
 

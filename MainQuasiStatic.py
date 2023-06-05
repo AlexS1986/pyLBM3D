@@ -19,6 +19,7 @@ rho0 = 1.0
 P0 = np.zeros((3, 3))
 j0 = np.zeros(3)
 
+# setting up lattice point positions
 ax = 1.0
 maxX = 10
 maxY = maxX
@@ -35,7 +36,7 @@ dt = 1.0 / math.sqrt(3.0) * dx / cs
 c = dx / dt
 
 nu = lam / (2.0 * (lam + mue))
-omega = 2.0 * cs ** 2 / ( cs ** 2 + 2 * nu) # TODO do you use this for solids als well (page 4)
+omega = 1.0 # one should also work, 2.0 * cs ** 2 / ( cs ** 2 + 2 * nu) # TODO do you use this for solids als well (page 4)
 tau = 1.0 / omega
 #tau = 0.55 * dt
 
@@ -63,13 +64,16 @@ while t <= tMax:
 
     # Lattice forces
     g = QS.g(rho, divSigma)
+    v = QS.v(rho,j)
+    gi = QS.gi(g,cc,w,rho,cs,v) # TODO this is cs = 1/sqrt(3)
 
     # BC ####################################
     def uBdFromCoordinates(coordinates):
-        c = 0.001
+        clocal = 0.001  # TODO maybe ramping
         nu = lam / (2.0 * (lam + mue))
-        return np.array([ c * coordinates[0], - nu * c * coordinates[1], - nu * c * coordinates[2] ])
+        return np.array([ clocal * coordinates[0], - nu * clocal * coordinates[1], - nu * clocal * coordinates[2] ])
 
+    # TODO for fixed BC use bounce back, halfway? 
     #xmin
     [f,u] = QSBC.applyDirichletBoundaryConditions(f,dx,dt,rho0,w,u,uBdFromCoordinates,'x',0)
 
@@ -101,21 +105,19 @@ while t <= tMax:
 
     # collision and streaming
     fEq = QS.equilibriumDistribution(rho,w)
-    v = QS.v(rho,j)
-    gi = QS.gi(g,cc,w,rho,cs,v)
 
-    fColl = QS.collide(f,fEq,gi,dt,1.0/tau)
+    fColl = QS.collide(f,fEq,gi,dt,omega)
     fNew = Core.stream(fColl, cc, c)
     f = fNew
 
     # compute displacement
     jOld = j
     j = Ex.j(Core.firstMoment(f, cc), dt, g)
-    u = QS.computeU(u, rho0, j, jOld, dt)
-
-    # compute rho
+     # compute rho
     rho = Core.computeRho(f)
+    u = QS.computeU(u, rho0, j, jOld, dt) # TODO rho0 more stable or use rho?
 
+   
     # compute strain, stress, stress divergence
     gradU = Util.computeGradientU(u,dx)
     sigma = QS.sigmaFromDisplacement(gradU,lam,mue)
