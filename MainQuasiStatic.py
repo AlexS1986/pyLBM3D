@@ -43,6 +43,8 @@ tau = 1.0 / omega
 [cc, w] = SettingsModule.getLatticeVelocitiesWeights(c)
 
 [f, j, sigma, u] = QS.intitialize(rho0, w, maxX, maxY, maxZ)
+divSigma = QS.divOfSigma(sigma,dx)
+rho = Core.computeRho(f)
 #b = np.zeros((maxX, maxY, maxZ, 3), dtype=np.double) # TODO not needed
 
 
@@ -58,6 +60,9 @@ pointIndices = [[maxX-1, maxY-1, maxZ-1], [maxX-1, maxY-1, maxZ-1], [0,0,0]]
 while t <= tMax:
     fNew = np.zeros((maxX, maxY, maxZ, 27), dtype=np.double)
     fNew.fill(np.nan)
+
+    # Lattice forces
+    g = QS.g(rho, divSigma)
 
     # BC ####################################
     def uBdFromCoordinates(coordinates):
@@ -85,19 +90,6 @@ while t <= tMax:
     
     # End BC #################################
 
-
-
-    rho = Core.computeRho(f)
-    gradU = Util.computeGradientU(u,dx)
-    sigma = QS.sigmaFromDisplacement(gradU,lam,mue)
-    divSigma = QS.divOfSigma(sigma,dx)
-    
-    g = QS.g(rho, divSigma)
-    jOld = j
-    j = Ex.j(Core.firstMoment(f, cc), dt, g)
-
-    u = QS.computeU(u, rho0, j, jOld, dt)
-
     # Postprocessing ################
     PostProcessing.writeVTKMaster(k, nameOfSimulation, pathToVTK, t, xx, u, sigma)
     uOut = []
@@ -107,15 +99,27 @@ while t <= tMax:
     outputFile = PostProcessing.writeToFile(outputFile,"./DirichletQS.dis",uOut,t)
     ######################
 
+    # collision and streaming
     fEq = QS.equilibriumDistribution(rho,w)
     v = QS.v(rho,j)
     gi = QS.gi(g,cc,w,rho,cs,v)
 
     fColl = QS.collide(f,fEq,gi,dt,1.0/tau)
     fNew = Core.stream(fColl, cc, c)
-
-
     f = fNew
+
+    # compute displacement
+    jOld = j
+    j = Ex.j(Core.firstMoment(f, cc), dt, g)
+    u = QS.computeU(u, rho0, j, jOld, dt)
+
+    # compute rho
+    rho = Core.computeRho(f)
+
+    # compute strain, stress, stress divergence
+    gradU = Util.computeGradientU(u,dx)
+    sigma = QS.sigmaFromDisplacement(gradU,lam,mue)
+    divSigma = QS.divOfSigma(sigma,dx)
 
     k = k + 1
     print(k)
