@@ -138,6 +138,25 @@ def v(rhoArg, jArg):
     return vOut
 
 
+def computeU(uOldArg, rho0Arg, jArg, jOldArg, dtArg):
+    '''
+    :param uOldArg: the displacement from the last time step in lattice dimensions (m,n,o,3)
+    :param rho0Arg: the original density, a scalar
+    :param jArg: the current momentum in lattice dimensions (m,n,o,3)
+    :param jOldArg: the momentum of the last time step in lattice dimensions (m,n,o,3)
+    :param dtArg: the time step size
+    :return: the displacement for the current time step in lattice dimensions (m,n,o,3)
+    '''
+    uNew = np.zeros((len(uOldArg), len(uOldArg[0]), len(uOldArg[0][0]), 3), dtype=np.double)
+    for i in range(0, len(uOldArg)):  # f0
+        for j in range(0, len(uOldArg[0])):
+            for k in range(0, len(uOldArg[0][0])):
+                if(i == 0 or j == 0 or k == 0 or i == len(uOldArg) or j == len(uOldArg[0]) or k == len(uOldArg[0][0])):
+                    uNew[i][j][k] = uOldArg[i][j][k]
+                else:
+                    uNew[i][j][k] = uOldArg[i][j][k] + (jArg[i][j][k] + jOldArg[i][j][k]) / rho0Arg / 2.0 * dtArg
+    return uNew
+
 
 
 

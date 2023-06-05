@@ -85,6 +85,8 @@ while t <= tMax:
     
     # End BC #################################
 
+
+
     rho = Core.computeRho(f)
     gradU = Util.computeGradientU(u,dx)
     sigma = QS.sigmaFromDisplacement(gradU,lam,mue)
@@ -94,7 +96,7 @@ while t <= tMax:
     jOld = j
     j = Ex.j(Core.firstMoment(f, cc), dt, g)
 
-    u = Ex.computeU(u, rho0, j, jOld, dt)
+    u = QS.computeU(u, rho0, j, jOld, dt)
 
     # Postprocessing ################
     PostProcessing.writeVTKMaster(k, nameOfSimulation, pathToVTK, t, xx, u, sigma)
