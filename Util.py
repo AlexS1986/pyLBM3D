@@ -29,7 +29,7 @@ def computeDivergenceUFromDisplacementField(uArg, dxArg):
 
     return divUOut
 
-def computeGradientU(uArg, dxArg):
+def computeGradientU(uArg, dxArg): # TODO different stencil 
     uX = np.zeros((len(uArg), len(uArg[0]), len(uArg[0][0])), dtype=np.double)
     uY = np.zeros((len(uArg), len(uArg[0]), len(uArg[0][0])), dtype=np.double)
     uZ = np.zeros((len(uArg), len(uArg[0]), len(uArg[0][0])), dtype=np.double)

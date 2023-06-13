@@ -25,7 +25,7 @@ def gi(gArg, ccArg, wArg, rhoArg, csArg, vArg):
             for k in range(0, len(gArg[0][0])):
                 for l in range(0,len(ccArg)):
                     bracket = np.einsum('a,a',ccArg[l],vArg[i,j,k]) * ccArg[l] - 1.0 / csArg ** 2 * vArg[i,j,k]
-                    gi[i,j,k,l] = wArg[l] * rhoArg[i,j,k] / csArg ** 2 * np.einsum('a,a',ccArg[l],gArg[i,j,k]) # page 4
+                    gi[i,j,k,l] = wArg[l] * rhoArg[i,j,k] / (csArg ** 2) * np.einsum('a,a',ccArg[l],gArg[i,j,k]) # page 4
                     + wArg[l] * rhoArg[i,j,k] / 2.0 / ( csArg ** 4) * np.einsum('a,a',bracket, gArg[i,j,k])
     return gi               
     
@@ -35,7 +35,7 @@ def g(rhoArg,divSigmaArg):
     for i in range(0, len(rhoArg)):
         for j in range(0, len(rhoArg[0])):
             for k in range(0, len(rhoArg[0][0])):
-                g[i,j,k] = 1.0/rhoArg[i,j,k] * divSigmaArg[i,j,k]
+                g[i,j,k] = 1.0/rhoArg[i,j,k] * divSigmaArg[i,j,k] # TODO try rho0 
     return g
 
 def firstSource(rhoArg, divSigmaArg):
@@ -43,6 +43,7 @@ def firstSource(rhoArg, divSigmaArg):
 
 
 def divOfSigma(sigmaArg, dxArg):
+    #TODO test for simple stress distribution and compare to analytic solution
     divOfSigma = np.zeros((len(sigmaArg), len(sigmaArg[0]), len(sigmaArg[0][0]),3), dtype=np.double)
 
     S11 = np.zeros((len(sigmaArg), len(sigmaArg[0]), len(sigmaArg[0][0])), dtype=np.double)
@@ -132,7 +133,7 @@ def v(rhoArg, jArg):
     for i in range(0, len(rhoArg)):
         for j in range(0, len(rhoArg[0])):
             for k in range(0, len(rhoArg[0][0])):
-                vOut[i,j,k] = 1.0 / rhoArg[i,j,k] * jArg[i,j,k]
+                vOut[i,j,k] = 1.0 / rhoArg[i,j,k] * jArg[i,j,k] # TODO rho0?
     return vOut
 
 
@@ -153,7 +154,7 @@ def computeU(uOldArg, rho0Arg, jArg, jOldArg, dtArg):
                     uNew[i][j][k] = uOldArg[i][j][k]
                 else:
                     uNew[i][j][k] = uOldArg[i][j][k] + (jArg[i][j][k] + jOldArg[i][j][k]) / rho0Arg / 2.0 * dtArg
-                    # TODO jArg and rho
+                    # TODO jArg and rho[i,j,k]
                     # TODO use v instead of jOld
     return uNew
 

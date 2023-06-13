@@ -12,7 +12,7 @@ import QS.QuasiStatic as QSt
 
 
 
-def applyDirichletBoundaryConditions(fArg, dxArg, dtArg, rho0Arg, wArg,   uArg, uBdFromCoordinatesFunction, 
+def applyDirichletBoundaryConditions(fArg, dxArg, dtArg, rho0Arg, rhoArg, wArg,   uArg, uBdFromCoordinatesFunction, 
                                      coordinateArg='x', coordinateValueArg=0, omegaBCArg=1.0):
     def densityLinearTheory(gradUArg,rho0Arg):
         
@@ -54,10 +54,11 @@ def applyDirichletBoundaryConditions(fArg, dxArg, dtArg, rho0Arg, wArg,   uArg, 
         for j in range(0, len(uAtBC[0])):
             uAtBC[i,j] = uBdFromCoordinatesFunction(computeCoordinatesFromIndices(dxArg,coordinateArg,coordinateValueArg,i,j))
 
-    # compute new density at boundary lattice points # TODO done differently, maybe leave
-    rho = densityFromDisplacementField(uOut,dxArg,rho0Arg)
+    # compute new density at boundary lattice points # TODO done differently, maybe dont do this step and use old rho
+    # rho = densityFromDisplacementField(uOut,dxArg,rho0Arg)
 
     # compute equilibrium distribution at lattice points
+    rho=rhoArg
     fEq = QSt.equilibriumDistribution(rho,wArg)
 
     # compute unknown distribution functions by relaxing
@@ -66,7 +67,7 @@ def applyDirichletBoundaryConditions(fArg, dxArg, dtArg, rho0Arg, wArg,   uArg, 
     fEqAtBC = BC.selectAtCoordinate(fEq, coordinateArg, coordinateValueArg)
     for i in range(0, len(fAtBC)):
         for j in range(0, len(fAtBC[0])):
-            # Collide without source -> double collision , TODO is applied twice at edges
+            # Collide without source -> double collision , TODO is applied twice at edges, thrice at corners
             fAtBC[i,j] = fAtBC[i,j] - dtArg * omegaBCArg * (fAtBC[i,j] - fEqAtBC[i,j])
 
     return [fOut, uOut]

@@ -75,33 +75,26 @@ while t <= tMax:
 
     # TODO for fixed BC use bounce back, halfway? 
     #xmin
-    [f,u] = QSBC.applyDirichletBoundaryConditions(f,dx,dt,rho0,w,u,uBdFromCoordinates,'x',0)
+    [f,u] = QSBC.applyDirichletBoundaryConditions(f,dx,dt,rho0,rho, w,u,uBdFromCoordinates,'x',0)
 
     #xmax
-    [f,u] = QSBC.applyDirichletBoundaryConditions(f,dx,dt,rho0,w,u,uBdFromCoordinates,'x',maxX-1)
+    [f,u] = QSBC.applyDirichletBoundaryConditions(f,dx,dt,rho0, rho, w,u,uBdFromCoordinates,'x',maxX-1)
 
     #ymin
-    [f,u] = QSBC.applyDirichletBoundaryConditions(f,dx,dt,rho0,w,u,uBdFromCoordinates,'y',0)
+    [f,u] = QSBC.applyDirichletBoundaryConditions(f,dx,dt,rho0, rho, w,u,uBdFromCoordinates,'y',0)
 
     #ymax
-    [f,u] = QSBC.applyDirichletBoundaryConditions(f,dx,dt,rho0,w,u,uBdFromCoordinates,'y',maxY-1)
+    [f,u] = QSBC.applyDirichletBoundaryConditions(f,dx,dt,rho0, rho, w,u,uBdFromCoordinates,'y',maxY-1)
 
     #zmin
-    [f,u] = QSBC.applyDirichletBoundaryConditions(f,dx,dt,rho0,w,u,uBdFromCoordinates,'z',0)
+    [f,u] = QSBC.applyDirichletBoundaryConditions(f,dx,dt,rho0, rho, w,u,uBdFromCoordinates,'z',0)
 
     #zmax
-    [f,u] = QSBC.applyDirichletBoundaryConditions(f,dx,dt,rho0,w,u,uBdFromCoordinates,'z',maxZ-1)
+    [f,u] = QSBC.applyDirichletBoundaryConditions(f,dx,dt,rho0, rho, w,u,uBdFromCoordinates,'z',maxZ-1)
     
     # End BC #################################
 
-    # Postprocessing ################
-    PostProcessing.writeVTKMaster(k, nameOfSimulation, pathToVTK, t, xx, u, sigma)
-    uOut = []
-    for indices in pointIndices:
-        uOut.append(u[indices[0], indices[1], indices[2]])
 
-    outputFile = PostProcessing.writeToFile(outputFile,"./DirichletQS.dis",uOut,t)
-    ######################
 
     # collision and streaming
     fEq = QS.equilibriumDistribution(rho,w)
@@ -122,6 +115,15 @@ while t <= tMax:
     gradU = Util.computeGradientU(u,dx)
     sigma = QS.sigmaFromDisplacement(gradU,lam,mue)
     divSigma = QS.divOfSigma(sigma,dx)
+
+    # Postprocessing ################
+    PostProcessing.writeVTKMaster(k, nameOfSimulation, pathToVTK, t, xx, u, sigma)
+    uOut = []
+    for indices in pointIndices:
+        uOut.append(u[indices[0], indices[1], indices[2]])
+
+    outputFile = PostProcessing.writeToFile(outputFile,"./DirichletQS.dis",uOut,t)
+    ######################
 
     k = k + 1
     print(k)
