@@ -11,8 +11,7 @@ import Util as util
 import QS.QuasiStatic as QSt 
 
 
-
-def applyDirichletBoundaryConditions(fArg, dxArg, dtArg, rho0Arg, rhoArg, wArg,   uArg, uBdFromCoordinatesFunction, 
+def applyDirichletBoundaryConditions(fArg, dxArg, dtArg, rho0Arg, rhoArg, wArg,   uArg, uBdFromCoordinatesFunction, visited,
                                      coordinateArg='x', coordinateValueArg=0, omegaBCArg=1.0):
     def densityLinearTheory(gradUArg,rho0Arg):
         
@@ -47,6 +46,7 @@ def applyDirichletBoundaryConditions(fArg, dxArg, dtArg, rho0Arg, rhoArg, wArg, 
         return [xOut, yOut, zOut]
     
     
+
     # set displacement field to prescribed value
     uOut = copy.deepcopy(uArg)
     uAtBC = BC.selectAtCoordinate(uOut, coordinateArg, coordinateValueArg)
@@ -65,9 +65,14 @@ def applyDirichletBoundaryConditions(fArg, dxArg, dtArg, rho0Arg, rhoArg, wArg, 
     fOut = copy.deepcopy(fArg)
     fAtBC = BC.selectAtCoordinate(fOut, coordinateArg, coordinateValueArg)
     fEqAtBC = BC.selectAtCoordinate(fEq, coordinateArg, coordinateValueArg)
+
+    visitedOut = copy.deepcopy(visited)
+    visitedAtBc = BC.selectAtCoordinate(visitedOut, coordinateArg, coordinateValueArg)
     for i in range(0, len(fAtBC)):
         for j in range(0, len(fAtBC[0])):
-            # Collide without source -> double collision , TODO is applied twice at edges, thrice at corners
-            fAtBC[i,j] = fAtBC[i,j] - dtArg * omegaBCArg * (fAtBC[i,j] - fEqAtBC[i,j])
-
-    return [fOut, uOut]
+            if(not visitedAtBc[i,j]): # lattice point has not been visited yet
+                # Collide without source -> double collision 
+                fAtBC[i,j] = fAtBC[i,j] - dtArg * omegaBCArg * (fAtBC[i,j] - fEqAtBC[i,j])
+                visitedAtBc[i,j] = True
+            
+    return [fOut, uOut, visitedOut]

@@ -73,24 +73,25 @@ while t <= tMax:
         nu = lam / (2.0 * (lam + mue))
         return np.array([ clocal * coordinates[0], - nu * clocal * coordinates[1], - nu * clocal * coordinates[2] ])
 
+    visited = np.zeros((maxX, maxY, maxZ), dtype=bool)
     # TODO for fixed BC use bounce back, halfway? 
     #xmin
-    [f,u] = QSBC.applyDirichletBoundaryConditions(f,dx,dt,rho0,rho, w,u,uBdFromCoordinates,'x',0)
+    [f,u, visited] = QSBC.applyDirichletBoundaryConditions(f,dx,dt,rho0,rho, w,u,uBdFromCoordinates,visited,'x',0)
 
     #xmax
-    [f,u] = QSBC.applyDirichletBoundaryConditions(f,dx,dt,rho0, rho, w,u,uBdFromCoordinates,'x',maxX-1)
+    [f,u, visited] = QSBC.applyDirichletBoundaryConditions(f,dx,dt,rho0, rho, w,u,uBdFromCoordinates,visited,'x',maxX-1)
 
     #ymin
-    [f,u] = QSBC.applyDirichletBoundaryConditions(f,dx,dt,rho0, rho, w,u,uBdFromCoordinates,'y',0)
+    [f,u, visited] = QSBC.applyDirichletBoundaryConditions(f,dx,dt,rho0, rho, w,u,uBdFromCoordinates,visited,'y',0)
 
     #ymax
-    [f,u] = QSBC.applyDirichletBoundaryConditions(f,dx,dt,rho0, rho, w,u,uBdFromCoordinates,'y',maxY-1)
+    [f,u, visited] = QSBC.applyDirichletBoundaryConditions(f,dx,dt,rho0, rho, w,u,uBdFromCoordinates,visited,'y',maxY-1)
 
     #zmin
-    [f,u] = QSBC.applyDirichletBoundaryConditions(f,dx,dt,rho0, rho, w,u,uBdFromCoordinates,'z',0)
+    [f,u, visited] = QSBC.applyDirichletBoundaryConditions(f,dx,dt,rho0, rho, w,u,uBdFromCoordinates,visited,'z',0)
 
     #zmax
-    [f,u] = QSBC.applyDirichletBoundaryConditions(f,dx,dt,rho0, rho, w,u,uBdFromCoordinates,'z',maxZ-1)
+    [f,u, visited] = QSBC.applyDirichletBoundaryConditions(f,dx,dt,rho0, rho, w,u,uBdFromCoordinates,visited,'z',maxZ-1)
     
     # End BC #################################
 
