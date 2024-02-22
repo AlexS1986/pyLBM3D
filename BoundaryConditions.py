@@ -402,7 +402,7 @@ def reduceSurfaceToEdge(surfaceArrayArg, coordinateArg1='x', coordinateArg2='y',
     elif coordinateArg1=='x' and coordinateArg2=='z':
         return selectAtCoordinate(surfaceArrayArg,'y', coordinateValueArg2)
     elif coordinateArg1=='y' and coordinateArg2=='z':
-        return selectAtCoordinate(surfaceArrayArg, 'x', coordinateValueArg2)
+        return selectAtCoordinate(surfaceArrayArg, 'y', coordinateValueArg2)
     else:
         raise Exception("Invalid input.")
 
